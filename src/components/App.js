@@ -1,12 +1,12 @@
 import React from "react";
-import Signup from "./Signup";
-import Dashboard from "./Dashboard";
-import Login from "./Login";
+import Signup from "./auth/Signup";
+import Dashboard from "./budgetting/Dashboard";
+import Login from "./auth/Login";
 import { AuthProvider } from '../contexts/AuthContext';
 import { BrowserRouter, Switch, Route } from 'react-router-dom';
-import PrivateRoute from "./PrivateRoute";
-import ForgotPassword from "./ForgotPassword";
-import UpdateProfile from "./UpdateProfile";
+import PrivateRoute from "./auth/PrivateRoute";
+import ForgotPassword from "./auth/ForgotPassword";
+import UpdateProfile from "./auth/UpdateProfile";
 
 function App() {
   return (
