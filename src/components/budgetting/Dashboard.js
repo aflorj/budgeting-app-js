@@ -1,34 +1,34 @@
-import React, { useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { Link, useHistory } from "react-router-dom";
-import { db } from "../../firebase";
+import React, { useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Link, useHistory } from 'react-router-dom';
+import { db } from '../../firebase';
 const date = new Date();
 const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
 const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
   const history = useHistory();
   let totalToBudget = 0;
-  const currency = "€";
+  const currency = '€';
   const docRef = db
-    .collection("usersdb")
+    .collection('usersdb')
     .doc(currentUser.uid)
-    .collection("budgetsByMonth")
+    .collection('budgetsByMonth')
     .doc(`${currentYear}_${currentMonth}`);
 
   useEffect(() => {
@@ -49,13 +49,12 @@ export default function Dashboard() {
         }
       })
       .catch((error) => {
-        console.log("Error getting document:", error);
+        console.log('Error getting document:', error);
       });
   }, []);
 
   async function handleLogout() {
-    await logout();
-    history.push("/login");
+    await logout().then(history.push('/login'));
   }
 
   return (

@@ -1,48 +1,76 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import Alert from "./Alert";
-import { Link } from "react-router-dom";
+import Alert from './Alert';
+import { Link } from 'react-router-dom';
+import LandingPage from './LandingPage';
 
 export default function ForgotPassword() {
-    const emailRef = useRef();
-    const { resetPassword } = useAuth();
-    const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
+  const emailRef = useRef();
+  const { resetPassword } = useAuth();
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(e) {
-        e.preventDefault();
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-        try {
-            setMessage('')
-            setError('');
-            setLoading(true);
-            await resetPassword(emailRef.current.value);
-            setMessage("Check your inbox")
-        } catch {
-            setError("Failed to reset password");
-        }
-        setLoading(false)
+    try {
+      setMessage('');
+      setError('');
+      setLoading(true);
+      await resetPassword(emailRef.current.value);
+      setMessage('Check your inbox');
+    } catch {
+      setError('Failed to reset password');
     }
+    setLoading(false);
+  }
 
-    return (
+  return (
+    <LandingPage
+      content={
         <>
-            <div>
-                Password Reset
-                {error && <Alert error={error} />}
-                {message && <Alert error={message} />}
-                <form onSubmit={handleSubmit}>
-                    email:
-                    <input type="email" ref={emailRef} required></input>
-                    <button disabled={loading} type="submit">Reset Password</button>
-                </form>
+          <p className="text-center text-3xl">Reset your password</p>
+          <form className="flex flex-col pt-3 md:pt-8" onSubmit={handleSubmit}>
+            <div className="flex flex-col pt-4">
+              <label for="email" className="text-lg">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                placeholder="your@email.com"
+                ref={emailRef}
+                required
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline focus:placeholder-transparent"
+              />
             </div>
-            <div>
-                <Link to="/login">Login</Link>
+
+            <div className="text-right pt-4 pb-12">
+              {error && <Alert error={error} />}
+              {message && <Alert error={message} />}
             </div>
-            <div>
-                Need an account? <Link to="/signup">Sign up</Link>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-black text-white font-bold text-lg hover:bg-gray-700 p-2 mt-8"
+            >
+              Reset Password
+            </button>
+          </form>
+          <div className="text-center pt-12 pb-12">
+            <Link to="/login" className="underline font-semibold">
+              Log In
+            </Link>
+            <p>
+              Don't have an account yet?{' '}
+              <Link to="/signup" className="underline font-semibold">
+                Sign up here
+              </Link>
+            </p>
+          </div>
         </>
-    )
+      }
+    />
+  );
 }
