@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import Alert from './Alert';
+import ErrorAlert from './ErrorAlert';
 import { Link, useHistory } from 'react-router-dom';
 import LandingPage from './LandingPage';
 
@@ -33,12 +33,14 @@ export default function Login() {
           <p className="text-center text-3xl">Welcome to NIMAMIMENA</p>
           <form className="flex flex-col pt-3 md:pt-8" onSubmit={handleSubmit}>
             <div className="flex flex-col pt-4">
-              <label for="email" className="text-lg">
+              <label htmlFor="email" className="text-lg">
                 Email
               </label>
               <input
                 type="email"
+                spellCheck="false"
                 id="email"
+                autoComplete="username"
                 placeholder="your@email.com"
                 ref={emailRef}
                 required
@@ -46,12 +48,13 @@ export default function Login() {
               />
             </div>
             <div className="flex flex-col pt-4">
-              <label for="password" className="text-lg">
+              <label htmlFor="password" className="text-lg">
                 Password
               </label>
               <input
                 type="password"
                 id="password"
+                autoComplete="current-password"
                 placeholder="******"
                 ref={passwordRef}
                 required
@@ -62,12 +65,12 @@ export default function Login() {
               <Link to="/forgot-password" className="underline">
                 Forgot password?
               </Link>
-              {error && <Alert error={error} />}
+              {error && <ErrorAlert error={error} />}
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-black text-white font-bold text-lg hover:bg-gray-700 p-2 mt-8"
+              className="bg-blue-400 text-white font-bold text-lg hover:bg-blue-300 p-2 mt-2"
             >
               Log In
             </button>

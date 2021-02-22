@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import Alert from './Alert';
+import ErrorAlert from './ErrorAlert';
+import InfoAlert from './InfoAlert';
 import { Link } from 'react-router-dom';
 import LandingPage from './LandingPage';
 
@@ -33,12 +34,14 @@ export default function ForgotPassword() {
           <p className="text-center text-3xl">Reset your password</p>
           <form className="flex flex-col pt-3 md:pt-8" onSubmit={handleSubmit}>
             <div className="flex flex-col pt-4">
-              <label for="email" className="text-lg">
+              <label htmlFor="email" className="text-lg">
                 Email
               </label>
               <input
                 type="email"
                 id="email"
+                spellCheck="false"
+                autoComplete="username"
                 placeholder="your@email.com"
                 ref={emailRef}
                 required
@@ -47,13 +50,13 @@ export default function ForgotPassword() {
             </div>
 
             <div className="text-right pt-4 pb-12">
-              {error && <Alert error={error} />}
-              {message && <Alert error={message} />}
+              {error && <ErrorAlert error={error} />}
+              {message && <InfoAlert error={message} />}
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-black text-white font-bold text-lg hover:bg-gray-700 p-2 mt-8"
+              className="bg-blue-400 text-white font-bold text-lg hover:bg-blue-300 p-2 mt-2"
             >
               Reset Password
             </button>
