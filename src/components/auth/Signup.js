@@ -42,7 +42,7 @@ export default function Signup() {
     <LandingPage
       content={
         <>
-          <p className="text-center text-3xl">Create your NIMAMIMENA account</p>
+          <p className="text-center text-3xl">Create your Budgetbud account</p>
           <form className="flex flex-col pt-3 md:pt-8" onSubmit={handleSubmit}>
             <div className="flex flex-col pt-4">
               <label htmlFor="email" className="text-lg">

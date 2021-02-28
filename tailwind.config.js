@@ -1,8 +1,5 @@
 module.exports = {
-  purge: [
-    './src/**/*.{js,jsx,ts,tsx}',
-    './src/**/**/*.{js,jsx,ts,tsx}'
-  ],
+  purge: ['./src/**/*.{js,jsx,ts,tsx}', './src/**/**/*.{js,jsx,ts,tsx}'],
   darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {},
@@ -11,4 +8,6 @@ module.exports = {
     extend: {},
   },
   plugins: [],
-}
+};
+
+// TODO enable dark mode and create a dark mode theme

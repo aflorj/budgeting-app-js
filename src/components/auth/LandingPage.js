@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 export default function LandingPage({ content }) {
   return (
-    <div className="bg-white h-screen w-full flex flex-wrap">
+    <div className="bg-gray-200 h-screen w-full flex flex-wrap">
       <div className="w-full md:w-1/2 flex flex-col">
         <div className="flex justify-center md:justify-start pt-12 md:pl-12 md:-mb-24">
           <Link to="/" className="text-white font-bold text-xl p-4">

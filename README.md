@@ -1,1 +1,1 @@
-# budgetting app js
+# budgeting app js

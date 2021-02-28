@@ -1,8 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { auth } from '../firebase';
 
-// TODO google account login
-
 const AuthContext = React.createContext();
 
 export function useAuth() {

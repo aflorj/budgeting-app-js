@@ -4,6 +4,8 @@ import ErrorAlert from './ErrorAlert';
 import { Link, useHistory } from 'react-router-dom';
 import LandingPage from './LandingPage';
 
+//TODO 'remember me' radio button
+
 export default function Login() {
   const emailRef = useRef();
   const passwordRef = useRef();
@@ -30,7 +32,7 @@ export default function Login() {
     <LandingPage
       content={
         <>
-          <p className="text-center text-3xl">Welcome to NIMAMIMENA</p>
+          <p className="text-center text-3xl">Welcome to Budgetbud</p>
           <form className="flex flex-col pt-3 md:pt-8" onSubmit={handleSubmit}>
             <div className="flex flex-col pt-4">
               <label htmlFor="email" className="text-lg">
