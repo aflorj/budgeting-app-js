@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import Loading from './Loading';
+import { Popover } from 'react-tiny-popover';
 
 const currency = '€';
 const date = new Date();
@@ -31,6 +32,9 @@ export default function Main({ user }) {
   ]);
   const [loading, setLoading] = useState(true);
   const [budgetData, setBudgetData] = useState('');
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+
   const docRef = db
     .collection('usersdb')
     .doc(user.uid)
@@ -45,6 +49,7 @@ export default function Main({ user }) {
           // Not a first ever (or first time this month) login from this user
           // Get data from the document and populate the app
           setBudgetData(doc.data());
+          console.log(doc.data()); // LOG
           setLoading(false);
         } else {
           // First ever (or first time this month) login from this user
@@ -64,6 +69,31 @@ export default function Main({ user }) {
         console.log('Error getting document:', error);
       });
   }, []);
+
+  function handleCategoryChange(e) {
+    setNewCategory(e.target.value);
+  }
+
+  function handleCategorySubmit(e) {
+    e.preventDefault();
+
+    // render the custom category
+    setCategories((categories) => [...categories, newCategory]);
+    setIsPopoverOpen(false);
+    setNewCategory('');
+
+    // update categories in the current month db with the new custom category
+    docRefCurrentMonth.set(
+      {
+        expenses: {
+          [newCategory]: {},
+        },
+      },
+      { merge: true }
+    );
+
+    // TODO add the custom category to the list of this user's custom categories in the db for the future budgets
+  }
 
   return loading ? (
     <Loading />
@@ -95,16 +125,37 @@ export default function Main({ user }) {
           <p>-0.00€ Budgeted in Future</p>
         </div>
       </div>
-      <button
-        onClick={() => {
-          setCategories((categories) => [...categories, 'kek']);
-        }}
+
+      <Popover
+        isOpen={isPopoverOpen}
+        positions={['right']}
+        onClickOutside={() => setIsPopoverOpen(false)}
+        content={
+          <div className="border-2 rounded-md">
+            <form onSubmit={(e) => handleCategorySubmit(e)}>
+              <input
+                spellCheck="false"
+                autoComplete="off"
+                // add max length
+                type="text"
+                value={newCategory}
+                onChange={(e) => handleCategoryChange(e)}
+              ></input>
+            </form>
+          </div>
+        }
       >
-        +category
-      </button>
+        <div
+          className="inline-block border-2 rounded-md cursor-pointer"
+          onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+        >
+          +category
+        </div>
+      </Popover>
+
       <div>
         {categories.map((x, index) => (
-          <div className="underline font-bold" key={index}>
+          <div className="underline font-bold capitalize" key={index}>
             {x}
           </div>
         ))}
