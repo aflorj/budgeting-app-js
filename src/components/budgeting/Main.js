@@ -22,51 +22,124 @@ const months = [
   'December',
 ];
 
-// TODO dnd elements (also in shepherdjs)
+const defaultCategories = {
+  'immediate obligations': {
+    rent: 0,
+    electric: 0,
+    water: 0,
+    internet: 0,
+    groceries: 0,
+    gas: 0,
+  },
+  'true expenses': {
+    'car maintenance': 0,
+    'home maintenance': 0,
+    'medical insurance': 0,
+    'car insurance': 0,
+    'home insurance': 0,
+    clothing: 0,
+    gifts: 0,
+    electronics: 0,
+  },
+  'quality of life': {
+    vacation: 0,
+    'gym membership': 0,
+    education: 0,
+  },
+  subscriptions: {
+    netflix: 0,
+    spotify: 0,
+  },
+  fun: {
+    gaming: 0,
+    music: 0,
+    'dining out': 0,
+  },
+};
+
+// TODO drag and drop
 
 export default function Main({ user }) {
-  const [categories, setCategories] = useState([
-    'True Expenses',
-    'Fun',
-    'Subscriptions',
-  ]);
+  const [categories, setCategories] = useState([]); // refactor state
   const [loading, setLoading] = useState(true);
   const [budgetData, setBudgetData] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [newCategory, setNewCategory] = useState('');
 
-  const docRef = db
-    .collection('usersdb')
-    .doc(user.uid)
-    .collection('budgetsByMonth');
-  const docRefCurrentMonth = docRef.doc(`${currentYear}_${currentMonth}`);
+  const dbRefUser = db.collection('usersdb').doc(user.uid);
+  const docRefRecurringData = dbRefUser
+    .collection('recurringData')
+    .doc('recurringData');
+  const docRefCurrentMonth = dbRefUser
+    .collection('budgetsByMonth')
+    .doc(`${currentYear}_${currentMonth}`);
 
   useEffect(() => {
-    docRefCurrentMonth
+    // check if this is a new user
+    dbRefUser
       .get()
       .then((doc) => {
         if (doc.exists) {
-          // Not a first ever (or first time this month) login from this user
-          // Get data from the document and populate the app
-          setBudgetData(doc.data());
-          console.log(doc.data()); // LOG
-          setLoading(false);
+          // this is not a new user
+          // check if this is the user's first login this month
+          docRefCurrentMonth
+            .get()
+            .then((doc) => {
+              if (doc.exists) {
+                // this is not the user's first login this month
+                // set state with the data from the user's current month document
+                setBudgetData(doc.data()); // refactor state
+                setCategories(doc.data().expenses);
+                console.log(doc.data()); // DELETE LINE
+                setLoading(false);
+              } else {
+                // this is the user's first login this month
+                // create a new document for this month
+                docRefCurrentMonth.set({
+                  budget: 0,
+                });
+                // TODO hardcoded for now but has to check db in the future when the
+                // user sets some recurring expenses
+                setBudgetData({
+                  budget: 0,
+                });
+                setLoading(false);
+              }
+            })
+            .catch((error) => {
+              console.log('Error getting the current month document:', error);
+            });
         } else {
-          // First ever (or first time this month) login from this user
-          // Create a new document for this month
-          docRefCurrentMonth.set({
-            budget: 0,
-          });
-          // TODO hardcoded for now but has to check db in the future when the
-          // user sets some recurring expenses
+          // this is a new user
+          // set local state to the blank budget and default categories
+          setCategories(defaultCategories);
           setBudgetData({
             budget: 0,
           });
+
+          // Render
           setLoading(false);
+
+          // TODO shepherdjs stuff
+
+          // create a new document for that user
+          dbRefUser.set({});
+
+          // Blank budget
+          docRefCurrentMonth.set({
+            budget: 0, // TODO remove when calculating budget is working
+            expenses: defaultCategories,
+            inflows: 0, // TODO
+          });
+
+          // Set user's categories to the default categories
+          docRefRecurringData.set({
+            expenses: defaultCategories,
+          });
         }
       })
       .catch((error) => {
-        console.log('Error getting document:', error);
+        console.log('Error getting the user document:', error);
       });
   }, []);
 
@@ -78,12 +151,12 @@ export default function Main({ user }) {
     e.preventDefault();
 
     // render the custom category
-    setCategories((categories) => [...categories, newCategory]);
+    setCategories((categories) => ({ ...categories, [newCategory]: '' }));
     setIsPopoverOpen(false);
     setNewCategory('');
 
-    // update categories in the current month db with the new custom category
-    docRefCurrentMonth.set(
+    // update user's categories in the recurring document
+    docRefRecurringData.set(
       {
         expenses: {
           [newCategory]: {},
@@ -92,7 +165,15 @@ export default function Main({ user }) {
       { merge: true }
     );
 
-    // TODO add the custom category to the list of this user's custom categories in the db for the future budgets
+    // update user's categories in the user's current month document
+    docRefCurrentMonth.set(
+      {
+        expenses: {
+          [newCategory]: {},
+        },
+      },
+      { merge: true }
+    );
   }
 
   return loading ? (
@@ -136,7 +217,7 @@ export default function Main({ user }) {
               <input
                 spellCheck="false"
                 autoComplete="off"
-                // add max length
+                // TODO add max length
                 type="text"
                 value={newCategory}
                 onChange={(e) => handleCategoryChange(e)}
@@ -154,7 +235,7 @@ export default function Main({ user }) {
       </Popover>
 
       <div>
-        {categories.map((x, index) => (
+        {Object.keys(categories).map((x, index) => (
           <div className="underline font-bold capitalize" key={index}>
             {x}
           </div>
