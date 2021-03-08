@@ -4,7 +4,7 @@ import Loading from './Loading';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
 
-const currency = '€';
+const currency = '€'; // hard-coded for now
 const date = new Date();
 const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
@@ -76,7 +76,8 @@ export default function Main({ user }) {
   const [loading, setLoading] = useState(true);
   const [budgetData, setBudgetData] = useState('');
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategoryOrExpense, setnewCategoryOrExpense] = useState('');
+  const [openElementName, setOpenElementName] = useState(false);
 
   const dbRefUser = db.collection('usersdb').doc(user.uid);
   const docRefRecurringData = dbRefUser
@@ -103,7 +104,6 @@ export default function Main({ user }) {
 
                 // set local state with the data from the user's current month document
                 setBudgetData(doc.data());
-
                 // render
                 setLoading(false);
               } else {
@@ -165,39 +165,46 @@ export default function Main({ user }) {
       });
   }, []);
 
-  function resetPopover() {
+  function resetCategoryPopover() {
     setIsPopoverOpen(false);
-    setNewCategory('');
+    setnewCategoryOrExpense('');
   }
 
-  function handleCategoryChange(e) {
-    setNewCategory(e.target.value);
+  function resetExpensePopover() {
+    setOpenElementName(false);
+    setnewCategoryOrExpense('');
+  }
+
+  function handleCategoryOrExpenseChange(e) {
+    setnewCategoryOrExpense(e.target.value);
   }
 
   function handleCategorySubmit(e) {
+    // TODO check if the category already exists
+
     e.preventDefault();
 
     // if user entered a name for the new category
     // add the new custom category to the local state
-    if (newCategory.length > 0) {
+    if (newCategoryOrExpense.length > 0) {
       setBudgetData((budgetData) => ({
         ...budgetData,
         expenses: [
           ...budgetData.expenses,
           {
-            categoryName: newCategory,
+            categoryName: newCategoryOrExpense,
             expensesInCategory: [],
           },
         ],
       }));
 
-      // close and reset the popover
-      resetPopover();
+      // reset the category popover
+      resetCategoryPopover();
 
       // update user's categories in the recurring document
       docRefRecurringData.update({
         expenses: firebase.firestore.FieldValue.arrayUnion({
-          categoryName: newCategory,
+          categoryName: newCategoryOrExpense,
           expensesInCategory: [],
         }),
       });
@@ -205,13 +212,60 @@ export default function Main({ user }) {
       // update user's categories in the user's current month document
       docRefCurrentMonth.update({
         expenses: firebase.firestore.FieldValue.arrayUnion({
-          categoryName: newCategory,
+          categoryName: newCategoryOrExpense,
           expensesInCategory: [],
         }),
       });
     } else {
       // user didn't enter anything
       setIsPopoverOpen(false);
+    }
+  }
+
+  function handleExpenseSubmit(e, category) {
+    // TODO check if the expense already exists in this category
+
+    e.preventDefault();
+    // if user entered a name for the new expense
+    // add the new epense to the local state
+
+    if (newCategoryOrExpense.length > 0) {
+      // find the index of the category that we want to add an expense to
+      const elementsIndex = budgetData.expenses.findIndex(
+        (element) => element.categoryName === category
+      );
+
+      // create a copy of the expenses array
+      // and update the copy with the new expense
+      let newArrayOfExpenses = [...budgetData.expenses];
+      newArrayOfExpenses[elementsIndex].expensesInCategory.push({
+        expense: newCategoryOrExpense,
+        amount: 0,
+      });
+
+      // add the custom expense to the local state
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        expenses: newArrayOfExpenses,
+      }));
+
+      // reset the category popover
+      resetExpensePopover();
+
+      // update the database with the new expense
+      // TODO update user's categories in the recurring document
+      // IF the expense is recurring
+
+      // update user's expenses in the user's current month document
+      docRefCurrentMonth.set(
+        {
+          expenses: budgetData.expenses,
+        },
+        { merge: true }
+      );
+    } else {
+      // user didn't enter anything
+      setOpenElementName(false);
     }
   }
 
@@ -250,7 +304,7 @@ export default function Main({ user }) {
         <Popover
           isOpen={isPopoverOpen}
           positions={['bottom', 'right']}
-          onClickOutside={() => resetPopover()}
+          onClickOutside={() => resetCategoryPopover()}
           content={({ position, childRect, popoverRect }) => (
             <ArrowContainer
               position={position}
@@ -269,13 +323,13 @@ export default function Main({ user }) {
                     placeholder="New Category"
                     maxLength="64"
                     type="text"
-                    value={newCategory}
-                    onChange={(e) => handleCategoryChange(e)}
+                    value={newCategoryOrExpense}
+                    onChange={(e) => handleCategoryOrExpenseChange(e)}
                   ></input>
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => resetPopover()}
+                      onClick={() => resetCategoryPopover()}
                       className="text-blue pl-1 pr-1 rounded-md border-2 border-gray-300"
                     >
                       Cancel
@@ -292,12 +346,12 @@ export default function Main({ user }) {
             </ArrowContainer>
           )}
         >
-          <div
+          <button
             className="inline-block border-2 rounded-md cursor-pointer"
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}
           >
             + Category
-          </div>
+          </button>
         </Popover>
         <div>
           {budgetData.expenses.map((el) => (
@@ -305,6 +359,68 @@ export default function Main({ user }) {
               <div className="capitalize font-bold bg-blue-200 inline-block border-2 border-blue-300 rounded-md pl-1 pr-1">
                 {el.categoryName}
               </div>
+
+              <Popover
+                isOpen={openElementName === el.categoryName}
+                positions={['right']}
+                onClickOutside={() => resetExpensePopover()}
+                content={({ position, childRect, popoverRect }) => (
+                  <ArrowContainer
+                    position={position}
+                    childRect={childRect}
+                    popoverRect={popoverRect}
+                    arrowColor={'white'}
+                    arrowSize={10}
+                    arrowStyle={{ opacity: 0.7 }}
+                  >
+                    <div className="rounded-md bg-white p-2">
+                      <form
+                        onSubmit={(e) =>
+                          handleExpenseSubmit(e, el.categoryName)
+                        }
+                      >
+                        <input
+                          className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                          spellCheck="false"
+                          autoComplete="off"
+                          placeholder="New Expense"
+                          maxLength="64"
+                          type="text"
+                          value={newCategoryOrExpense}
+                          onChange={(e) => handleCategoryOrExpenseChange(e)}
+                        ></input>
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => resetExpensePopover()}
+                            className="text-blue pl-1 pr-1 rounded-md border-2 border-gray-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="bg-blue-400 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </ArrowContainer>
+                )}
+              >
+                <button
+                  className="inline-block border-2 rounded-md cursor-pointer ml-1 hover:font-bold opacity-50 hover:opacity-100"
+                  onClick={() =>
+                    openElementName === false
+                      ? setOpenElementName(el.categoryName)
+                      : setOpenElementName(false)
+                  }
+                >
+                  +
+                </button>
+              </Popover>
+
               {el.expensesInCategory.map((cat) => (
                 <div
                   className="capitalize border-b-2 hover:bg-blue-100 hover:border-gray-400 pl-2 flex justify-between"
