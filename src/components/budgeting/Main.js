@@ -3,82 +3,48 @@ import { db } from '../../firebase';
 import Loading from './Loading';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
+import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
 
-const currency = '€'; // hard-coded for now
+const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
 const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
-const months = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-const defaultCategories = [
-  {
-    categoryName: 'immediate obligations',
-    expensesInCategory: [
-      { expense: 'rent', amount: 0 },
-      { expense: 'electric', amount: 0 },
-      { expense: 'water', amount: 0 },
-      { expense: 'internet', amount: 0 },
-      { expense: 'groceries', amount: 0 },
-      { expense: 'gas', amount: 0 },
-    ],
-  },
-  {
-    categoryName: 'true expenses',
-    expensesInCategory: [
-      { expense: 'car maintenance', amount: 0 },
-      { expense: 'home maintenance', amount: 0 },
-      { expense: 'medical insurance', amount: 0 },
-      { expense: 'car insurance', amount: 0 },
-      { expense: 'home insurance', amount: 0 },
-    ],
-  },
-  {
-    categoryName: 'quality of life',
-    expensesInCategory: [
-      { expense: 'vacation', amount: 0 },
-      { expense: 'gym membership', amount: 0 },
-      { expense: 'education', amount: 0 },
-    ],
-  },
-  {
-    categoryName: 'subscriptions',
-    expensesInCategory: [
-      { expense: 'netflix', amount: 0 },
-      { expense: 'spotify', amount: 0 },
-    ],
-  },
-  {
-    categoryName: 'fun',
-    expensesInCategory: [
-      { expense: 'gaming', amount: 0 },
-      { expense: 'music', amount: 0 },
-      { expense: 'dining out', amount: 0 },
-    ],
-  },
-];
 
 // TODO drag and drop
 
 export default function Main({ user }) {
+  // renders loading component until the data is available to be rendered
   const [loading, setLoading] = useState(true);
+
+  // all budgeting data
   const [budgetData, setBudgetData] = useState('');
+
+  // 'add category' popover - true or false
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  // holds input value from the user when creating a new category or an expense
+  // shared state because the user can't create a category and an expense simultaneously
   const [newCategoryOrExpense, setnewCategoryOrExpense] = useState('');
+
+  // state of the 'create an expense' popup
+  // 'false' when closed or holds the name of the category under which the expense is being added
   const [openElementName, setOpenElementName] = useState(false);
 
+  // state of the 'edit a category' popup
+  // 'false' when closed or holds the name of the category being edited
+  const [openEditCategory, setOpenEditCategory] = useState(false);
+
+  // when editing a category, set the starting value of the input
+  // to the current name of the category being edited
+  const [nowEditingCategory, setNowEditingCategory] = useState('');
+
+  // editing an amount
+  // which expense's amount is being edited
+  const [nowEditingAmount, setNowEditingAmount] = useState(false);
+  // the value of that expense's amount
+  const [valueOfAmount, setValueOfAmount] = useState('');
+
+  // firestore documents references
   const dbRefUser = db.collection('usersdb').doc(user.uid);
   const docRefRecurringData = dbRefUser
     .collection('recurringData')
@@ -87,6 +53,7 @@ export default function Main({ user }) {
     .collection('budgetsByMonth')
     .doc(`${currentYear}_${currentMonth}`);
 
+  // the user logs in and main.js is rendered
   useEffect(() => {
     // check if this is a new user
     dbRefUser
@@ -135,7 +102,7 @@ export default function Main({ user }) {
           // set local state to the blank budget(?) and default categories
           setBudgetData({
             budget: 0,
-            expenses: defaultCategories,
+            expenses: DEFAULT_CATEGORIES,
             inflows: 0,
           });
 
@@ -150,13 +117,13 @@ export default function Main({ user }) {
           // Blank budget
           docRefCurrentMonth.set({
             budget: 0, // TODO remove when calculating budget is working
-            expenses: defaultCategories,
+            expenses: DEFAULT_CATEGORIES,
             inflows: 0, // TODO
           });
 
           // Set user's categories to the default categories
           docRefRecurringData.set({
-            expenses: defaultCategories,
+            expenses: DEFAULT_CATEGORIES,
           });
         }
       })
@@ -165,22 +132,53 @@ export default function Main({ user }) {
       });
   }, []);
 
+  // closes the 'create a category' popup and resets the input value
   function resetCategoryPopover() {
     setIsPopoverOpen(false);
     setnewCategoryOrExpense('');
   }
 
+  // closes the 'create an expense' popup and resets the input value
   function resetExpensePopover() {
     setOpenElementName(false);
     setnewCategoryOrExpense('');
+  }
+
+  // closes the 'edit a category' popup and resets the input value
+  function resetCategoryEdit() {
+    setOpenEditCategory(false);
+    setNowEditingCategory('');
+  }
+
+  // opens the edit category popover and sets the input value
+  // to the category that is being edited
+  function prepareCategoryEdit(category) {
+    setNowEditingCategory(category);
+    setOpenEditCategory(category);
+  }
+
+  // sets the name and the value of the expense that is being edited
+  function prepareAmountEdit(category) {
+    setNowEditingAmount(category.expense);
+    setValueOfAmount(category.amount);
   }
 
   function handleCategoryOrExpenseChange(e) {
     setnewCategoryOrExpense(e.target.value);
   }
 
+  function handleCategoryEditChange(e) {
+    setNowEditingCategory(e.target.value);
+  }
+
+  function handleAmountEditChange(e) {
+    setValueOfAmount(e.target.value);
+  }
+
   function handleCategorySubmit(e) {
     // TODO check if the category already exists
+
+    // to lahko kr lokalno - itak se ujema z db
 
     e.preventDefault();
 
@@ -223,12 +221,12 @@ export default function Main({ user }) {
   }
 
   function handleExpenseSubmit(e, category) {
-    // TODO check if the expense already exists in this category
+    // TODO check if the expense already exists in this category (lahko lokalno)
 
     e.preventDefault();
-    // if user entered a name for the new expense
-    // add the new epense to the local state
 
+    // if user entered a name for the new expense
+    // add the new expense to the local state
     if (newCategoryOrExpense.length > 0) {
       // find the index of the category that we want to add an expense to
       const elementsIndex = budgetData.expenses.findIndex(
@@ -243,13 +241,13 @@ export default function Main({ user }) {
         amount: 0,
       });
 
-      // add the custom expense to the local state
+      // add the expense to the local state
       setBudgetData((budgetData) => ({
         ...budgetData,
         expenses: newArrayOfExpenses,
       }));
 
-      // reset the category popover
+      // reset the expense popover
       resetExpensePopover();
 
       // update the database with the new expense
@@ -269,6 +267,151 @@ export default function Main({ user }) {
     }
   }
 
+  // renaming a category
+  function handleCategoryEditSubmit(e, category) {
+    e.preventDefault();
+
+    // check if user made any changes to the category name
+    // and only apply changes if the user didn't leave the field empty
+    if (
+      category !== nowEditingCategory &&
+      nowEditingCategory.length >
+        0 /* TODO && 'truthy' user's input && category doesn't exist yet*/
+    ) {
+      // find the index of the category that we want to edit the name of
+      const elementsIndex = budgetData.expenses.findIndex(
+        (element) => element.categoryName === category
+      );
+
+      // create a copy of the expenses array
+      // find the correct category and rename it
+      let expensesArrayCopy = [...budgetData.expenses];
+      expensesArrayCopy[elementsIndex].categoryName = nowEditingCategory;
+
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        expenses: expensesArrayCopy,
+      }));
+
+      // apply the changes to the db
+      docRefCurrentMonth.set(
+        {
+          expenses: budgetData.expenses,
+        },
+        { merge: true }
+      );
+
+      // TODO recurring doc
+    }
+    setOpenEditCategory(false);
+  }
+
+  // removing category
+  // TODO handling the recurring doc
+  function deleteCategory(e, category) {
+    e.preventDefault();
+
+    // find the index of the object we're removing form the array
+    const indexToRemove = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category
+    );
+
+    // delete the category from the local state
+    let expensesArrayCopy = [...budgetData.expenses];
+    expensesArrayCopy.splice(indexToRemove, 1);
+    setBudgetData((budgetData) => ({
+      ...budgetData,
+      expenses: expensesArrayCopy,
+    }));
+
+    // delete the category from the db
+    // firestore "arrayRemove" requires an exact copy of the object being removed
+    // our data is normalized so we can find the exact object in our local state
+    const objectToRemove = budgetData.expenses[indexToRemove];
+
+    // 'current month' document
+    docRefCurrentMonth.update({
+      expenses: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
+    });
+
+    // 'recurring' document
+    docRefRecurringData.update({
+      expenses: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
+    });
+
+    setOpenEditCategory(false);
+  }
+
+  function handleAmountSubmit(e, category, expenseObject) {
+    e.preventDefault();
+
+    // the index of the category that the edited expense belongs to
+    const indexOfCategory = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category.categoryName
+    );
+
+    // the index of the expense inside the category at that index
+    const indexOfExpense = budgetData.expenses[
+      indexOfCategory
+    ].expensesInCategory.findIndex(
+      (element) => element.expense === expenseObject.expense
+    );
+
+    // clearing the input and submitting equals to setting the expense amount to zero
+    if (valueOfAmount.length === 0) {
+      let expensesArrayCopy = [...budgetData.expenses];
+      expensesArrayCopy[indexOfCategory].expensesInCategory[
+        indexOfExpense
+      ].amount = 0;
+
+      // set it to zero in the local state
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        expenses: expensesArrayCopy,
+      }));
+
+      // set it to zero in the db
+      docRefCurrentMonth.set(
+        {
+          expenses: budgetData.expenses,
+        },
+        { merge: true }
+      );
+    } else {
+      // the user has changed the amount of this expense and did not leave the input field empty
+      if (expenseObject.amount !== parseFloat(valueOfAmount)) {
+        // check if the user entered a number
+        if (isNaN(valueOfAmount) === true) {
+          setNowEditingAmount(false);
+        } else {
+          // apply the changes to the local state
+          // copy of the array of the expenses in the category the edited expense belongs to
+          let expensesArrayCopy = [...budgetData.expenses];
+          expensesArrayCopy[indexOfCategory].expensesInCategory[
+            indexOfExpense
+          ].amount = parseFloat(valueOfAmount);
+          setBudgetData((budgetData) => ({
+            ...budgetData,
+            expenses: expensesArrayCopy,
+          }));
+
+          //and db changes
+          docRefCurrentMonth.set(
+            {
+              expenses: budgetData.expenses,
+            },
+            { merge: true }
+          );
+
+          setNowEditingAmount(false);
+          // TODO recurring
+        }
+      }
+    }
+
+    setNowEditingAmount(false);
+  }
+
   return loading ? (
     <Loading />
   ) : (
@@ -277,7 +420,7 @@ export default function Main({ user }) {
         <div className="ml-20">
           <p>Your budget for</p>
           <div className="font-bold text-xl">
-            {months[currentMonth]} {currentYear}
+            {MONTHS[currentMonth]} {currentYear}
           </div>
         </div>
         <div className="font-extrabold text-white p-5 ml-40 bg-green-400 rounded-md">
@@ -290,12 +433,12 @@ export default function Main({ user }) {
           <p className="font-normal">to be budgeted</p>
         </div>
         <div className="flex flex-col text-sm ml-2">
-          <p>+0.00€ Funds for {months[currentMonth]}</p>
+          <p>+0.00€ Funds for {MONTHS[currentMonth]}</p>
           <p>
             -0.00€ Overspent in{' '}
-            {months[currentMonth === 0 ? 10 : currentMonth - 1]}
+            {MONTHS[currentMonth === 0 ? 10 : currentMonth - 1]}
           </p>
-          <p>-0.00€ Budgeted in {months[currentMonth]}</p>
+          <p>-0.00€ Budgeted in {MONTHS[currentMonth]}</p>
           <p>-0.00€ Budgeted in Future</p>
         </div>
       </div>
@@ -330,13 +473,13 @@ export default function Main({ user }) {
                     <button
                       type="button"
                       onClick={() => resetCategoryPopover()}
-                      className="text-blue pl-1 pr-1 rounded-md border-2 border-gray-300"
+                      className="text-blue-500 hover:bg-blue-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-400 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
+                      className="bg-blue-400 hover:bg-blue-500 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
                     >
                       OK
                     </button>
@@ -347,7 +490,7 @@ export default function Main({ user }) {
           )}
         >
           <button
-            className="inline-block border-2 rounded-md cursor-pointer"
+            className="focus:outline-white inline-block pl-1 pr-1 border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-md cursor-pointer"
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}
           >
             + Category
@@ -356,10 +499,75 @@ export default function Main({ user }) {
         <div>
           {budgetData.expenses.map((el) => (
             <div className="p-2" key={el.categoryName}>
-              <div className="capitalize font-bold bg-blue-200 inline-block border-2 border-blue-300 rounded-md pl-1 pr-1">
-                {el.categoryName}
-              </div>
-
+              <Popover
+                isOpen={openEditCategory === el.categoryName}
+                positions={['bottom', 'top']}
+                onClickOutside={() => resetCategoryEdit()}
+                content={({ position, childRect, popoverRect }) => (
+                  <ArrowContainer
+                    position={position}
+                    childRect={childRect}
+                    popoverRect={popoverRect}
+                    arrowColor={'white'}
+                    arrowSize={10}
+                    arrowStyle={{ opacity: 0.7 }}
+                  >
+                    <div className="rounded-md bg-white p-2">
+                      <form
+                        onSubmit={(e) =>
+                          handleCategoryEditSubmit(e, el.categoryName)
+                        }
+                      >
+                        <input
+                          className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                          spellCheck="false"
+                          autoComplete="off"
+                          placeholder="New Category"
+                          maxLength="64"
+                          type="text"
+                          value={nowEditingCategory}
+                          onChange={(e) => handleCategoryEditChange(e)}
+                        ></input>
+                        <div className="pt-2 flex justify-between">
+                          <button
+                            type="button"
+                            onClick={(e) => deleteCategory(e, el.categoryName)}
+                            className="text-red-500 hover:bg-red-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
+                          >
+                            Delete
+                          </button>
+                          <div className="flex">
+                            <button
+                              type="button"
+                              onClick={() => resetCategoryEdit()}
+                              className="text-blue-500 hover:bg-blue-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="bg-blue-400 hover:bg-blue-500 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
+                            >
+                              OK
+                            </button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </ArrowContainer>
+                )}
+              >
+                <div
+                  className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md pl-1 pr-1"
+                  onClick={() =>
+                    openEditCategory === false
+                      ? prepareCategoryEdit(el.categoryName)
+                      : setOpenEditCategory(false)
+                  }
+                >
+                  {el.categoryName}
+                </div>
+              </Popover>
               <Popover
                 isOpen={openElementName === el.categoryName}
                 positions={['right']}
@@ -393,13 +601,13 @@ export default function Main({ user }) {
                           <button
                             type="button"
                             onClick={() => resetExpensePopover()}
-                            className="text-blue pl-1 pr-1 rounded-md border-2 border-gray-300"
+                            className="text-blue-500 hover:bg-blue-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
-                            className="bg-blue-400 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
+                            className="bg-blue-400 hover:bg-blue-500 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
                           >
                             OK
                           </button>
@@ -409,29 +617,47 @@ export default function Main({ user }) {
                   </ArrowContainer>
                 )}
               >
-                <button
-                  className="inline-block border-2 rounded-md cursor-pointer ml-1 hover:font-bold opacity-50 hover:opacity-100"
-                  onClick={() =>
-                    openElementName === false
-                      ? setOpenElementName(el.categoryName)
-                      : setOpenElementName(false)
-                  }
-                >
-                  +
-                </button>
+                <div className="inline-block">
+                  <button
+                    className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100"
+                    onClick={() =>
+                      openElementName === false
+                        ? setOpenElementName(el.categoryName)
+                        : setOpenElementName(false)
+                    }
+                  >
+                    +
+                  </button>
+                </div>
               </Popover>
-
-              {el.expensesInCategory.map((cat) => (
+              {el.expensesInCategory.map((expenseObject) => (
                 <div
                   className="capitalize border-b-2 hover:bg-blue-100 hover:border-gray-400 pl-2 flex justify-between"
-                  key={cat.expense}
+                  key={expenseObject.expense}
                 >
-                  <div>{cat.expense}</div>
-                  <div>
-                    {cat.amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                  <div className="cursor-pointer">{expenseObject.expense}</div>
+                  <div className="pr-1 pl-1 flex">
+                    <form
+                      onSubmit={(e) => handleAmountSubmit(e, el, expenseObject)}
+                    >
+                      <input
+                        className="text-right bg-gray-100 cursor-pointer focus:bg-white"
+                        type="text"
+                        onClick={() => prepareAmountEdit(expenseObject)}
+                        onChange={(e) => handleAmountEditChange(e)}
+                        onBlur={(e) => handleAmountSubmit(e, el, expenseObject)} // + submitat
+                        spellCheck="false"
+                        autoComplete="false"
+                        value={
+                          nowEditingAmount === expenseObject.expense
+                            ? valueOfAmount
+                            : expenseObject.amount.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                        }
+                      ></input>
+                    </form>
                     {currency}
                   </div>
                 </div>
