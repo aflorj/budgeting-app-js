@@ -10,7 +10,7 @@ const date = new Date();
 const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
 
-// TODO drag and drop
+// TODO: edge cases with user input (trim, regex,...)
 
 export default function Main({ user }) {
   // renders loading component until the data is available to be rendered
@@ -30,13 +30,15 @@ export default function Main({ user }) {
   // 'false' when closed or holds the name of the category under which the expense is being added
   const [openElementName, setOpenElementName] = useState(false);
 
-  // state of the 'edit a category' popup
-  // 'false' when closed or holds the name of the category being edited
+  // state of the 'edit a category' and 'edit an expense' popup
+  // 'false' when closed or holds the name of the category/expense being edited
   const [openEditCategory, setOpenEditCategory] = useState(false);
+  const [openEditExpense, setOpenEditExpense] = useState(false);
 
-  // when editing a category, set the starting value of the input
-  // to the current name of the category being edited
+  // when editing a category or an expense, set the starting value of the input
+  // to the current name of the category or the expense being edited
   const [nowEditingCategory, setNowEditingCategory] = useState('');
+  const [nowEditingExpense, setNowEditingExpense] = useState('');
 
   // editing an amount
   // which expense's amount is being edited
@@ -150,6 +152,12 @@ export default function Main({ user }) {
     setNowEditingCategory('');
   }
 
+  // closes the 'edit an expense' popup and resets the input value
+  function resetExpenseEdit() {
+    setOpenEditExpense(false);
+    setNowEditingExpense('');
+  }
+
   // opens the edit category popover and sets the input value
   // to the category that is being edited
   function prepareCategoryEdit(category) {
@@ -157,10 +165,21 @@ export default function Main({ user }) {
     setOpenEditCategory(category);
   }
 
+  // opens the edit expense popover and sets the input value
+  // to the expense that is being edited
+  function prepareExpenseEdit(expense) {
+    setNowEditingExpense(expense);
+    setOpenEditExpense(expense);
+  }
+
   // sets the name and the value of the expense that is being edited
-  function prepareAmountEdit(category) {
-    setNowEditingAmount(category.expense);
-    setValueOfAmount(category.amount);
+  function prepareAmountEdit(expenseObject) {
+    setNowEditingAmount(expenseObject.expense);
+    if (expenseObject.amount === 0) {
+      setValueOfAmount('');
+    } else {
+      setValueOfAmount(expenseObject.amount);
+    }
   }
 
   function handleCategoryOrExpenseChange(e) {
@@ -171,14 +190,16 @@ export default function Main({ user }) {
     setNowEditingCategory(e.target.value);
   }
 
+  function handleExpenseEditChange(e) {
+    setNowEditingExpense(e.target.value);
+  }
+
   function handleAmountEditChange(e) {
     setValueOfAmount(e.target.value);
   }
 
   function handleCategorySubmit(e) {
-    // TODO check if the category already exists
-
-    // to lahko kr lokalno - itak se ujema z db
+    // TODO check if the category already exists (comparison to the budgetData)
 
     e.preventDefault();
 
@@ -306,12 +327,57 @@ export default function Main({ user }) {
     setOpenEditCategory(false);
   }
 
-  // removing category
+  // renaming an expense
+  function handleExpenseEditSubmit(e, category, expense) {
+    e.preventDefault();
+
+    // check if user made any changes to the category name
+    // and only apply changes if the user didn't leave the field empty
+    if (
+      expense !== nowEditingExpense &&
+      nowEditingExpense.length >
+        0 /* TODO && 'truthy' user's input && category doesn't exist yet*/
+    ) {
+      // the index of the category that the edited expense belongs to
+      const indexOfCategory = budgetData.expenses.findIndex(
+        (element) => element.categoryName === category
+      );
+
+      // the index of the expense inside the category at that index
+      const indexOfExpense = budgetData.expenses[
+        indexOfCategory
+      ].expensesInCategory.findIndex((element) => element.expense === expense);
+
+      // apply the changes to the local state
+      // copy of the array of the expenses in the category the edited expense belongs to
+      let expensesArrayCopy = [...budgetData.expenses];
+      expensesArrayCopy[indexOfCategory].expensesInCategory[
+        indexOfExpense
+      ].expense = nowEditingExpense;
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        expenses: expensesArrayCopy,
+      }));
+
+      // apply the changes to the db
+      docRefCurrentMonth.set(
+        {
+          expenses: budgetData.expenses,
+        },
+        { merge: true }
+      );
+
+      // TODO recurring doc
+    }
+    setOpenEditExpense(false);
+  }
+
+  // removing a category
   // TODO handling the recurring doc
   function deleteCategory(e, category) {
     e.preventDefault();
 
-    // find the index of the object we're removing form the array
+    // find the index of the object we're removing from the array
     const indexToRemove = budgetData.expenses.findIndex(
       (element) => element.categoryName === category
     );
@@ -342,12 +408,53 @@ export default function Main({ user }) {
     setOpenEditCategory(false);
   }
 
+  // removing an expense
+  // TODO handling the recurring doc
+  function deleteExpense(e, category, expense) {
+    e.preventDefault();
+
+    // the index of the category that the deleted expense belongs to
+    const indexOfCategory = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category
+    );
+
+    // the index of the expense inside the category at that index
+    const indexOfExpense = budgetData.expenses[
+      indexOfCategory
+    ].expensesInCategory.findIndex((element) => element.expense === expense);
+
+    // apply the changes to the local state
+    // copy of the array of the expenses in the category the deleted expense belongs to
+    let expensesArrayCopy = [...budgetData.expenses];
+    expensesArrayCopy[indexOfCategory].expensesInCategory.splice(
+      indexOfExpense,
+      1
+    );
+    setBudgetData((budgetData) => ({
+      ...budgetData,
+      expenses: expensesArrayCopy,
+    }));
+
+    // apply the changes to the db
+    docRefCurrentMonth.set(
+      {
+        expenses: budgetData.expenses,
+      },
+      { merge: true }
+    );
+
+    // TODO recurring doc
+
+    setOpenEditExpense(false);
+  }
+
   function handleAmountSubmit(e, category, expenseObject) {
+    // category pass refactor
     e.preventDefault();
 
     // the index of the category that the edited expense belongs to
     const indexOfCategory = budgetData.expenses.findIndex(
-      (element) => element.categoryName === category.categoryName
+      (element) => element.categoryName === category // SAMO BREZ .CATEGORY NAME
     );
 
     // the index of the expense inside the category at that index
@@ -522,7 +629,6 @@ export default function Main({ user }) {
                           className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
                           spellCheck="false"
                           autoComplete="off"
-                          placeholder="New Category"
                           maxLength="64"
                           type="text"
                           value={nowEditingCategory}
@@ -635,17 +741,102 @@ export default function Main({ user }) {
                   className="capitalize border-b-2 hover:bg-blue-100 hover:border-gray-400 pl-2 flex justify-between"
                   key={expenseObject.expense}
                 >
-                  <div className="cursor-pointer">{expenseObject.expense}</div>
+                  <div className="cursor-pointer">
+                    <Popover
+                      isOpen={openEditExpense === expenseObject.expense}
+                      positions={['bottom', 'top']}
+                      onClickOutside={() => resetExpenseEdit()}
+                      content={({ position, childRect, popoverRect }) => (
+                        <ArrowContainer
+                          position={position}
+                          childRect={childRect}
+                          popoverRect={popoverRect}
+                          arrowColor={'white'}
+                          arrowSize={10}
+                          arrowStyle={{ opacity: 0.7 }}
+                        >
+                          <div className="rounded-md bg-white p-2">
+                            <form
+                              onSubmit={(e) =>
+                                handleExpenseEditSubmit(
+                                  e,
+                                  el.categoryName,
+                                  expenseObject.expense
+                                )
+                              }
+                            >
+                              <input
+                                className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                                spellCheck="false"
+                                autoComplete="off"
+                                placeholder="New Category"
+                                maxLength="64"
+                                type="text"
+                                value={nowEditingExpense}
+                                onChange={(e) => handleExpenseEditChange(e)}
+                              ></input>
+                              <div className="pt-2 flex justify-between">
+                                <button
+                                  type="button"
+                                  onClick={(e) =>
+                                    deleteExpense(
+                                      e,
+                                      el.categoryName,
+                                      expenseObject.expense
+                                    )
+                                  }
+                                  className="text-red-500 hover:bg-red-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
+                                >
+                                  Delete
+                                </button>
+                                <div className="flex">
+                                  <button
+                                    type="button"
+                                    onClick={() => resetExpenseEdit()}
+                                    className="text-blue-500 hover:bg-blue-500 hover:text-white pl-1 pr-1 rounded-md border-2 border-gray-300"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="bg-blue-400 hover:bg-blue-500 text-white ml-2 pl-4 pr-4 rounded-md border-2 border-gray-300"
+                                  >
+                                    OK
+                                  </button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </ArrowContainer>
+                      )}
+                    >
+                      <div
+                        className="capitalize hover:bg-blue-100 pl-2 flex justify-between"
+                        onClick={() =>
+                          openEditExpense === false
+                            ? prepareExpenseEdit(expenseObject.expense)
+                            : setOpenEditExpense(false)
+                        }
+                      >
+                        {expenseObject.expense}
+                      </div>
+                    </Popover>
+                  </div>
                   <div className="pr-1 pl-1 flex">
                     <form
-                      onSubmit={(e) => handleAmountSubmit(e, el, expenseObject)}
+                      onSubmit={(e) =>
+                        handleAmountSubmit(e, el.categoryName, expenseObject)
+                      }
                     >
                       <input
                         className="text-right bg-gray-100 cursor-pointer focus:bg-white"
+                        key={expenseObject.expense}
                         type="text"
                         onClick={() => prepareAmountEdit(expenseObject)}
                         onChange={(e) => handleAmountEditChange(e)}
-                        onBlur={(e) => handleAmountSubmit(e, el, expenseObject)} // + submitat
+                        onBlur={(e) =>
+                          handleAmountSubmit(e, el.categoryName, expenseObject)
+                        }
                         spellCheck="false"
                         autoComplete="false"
                         value={
