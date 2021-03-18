@@ -40,6 +40,7 @@ export default function ForgotPassword() {
               <input
                 type="email"
                 id="email"
+                autoFocus
                 spellCheck="false"
                 autoComplete="username"
                 placeholder="your@email.com"

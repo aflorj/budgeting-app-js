@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { db } from '../../firebase';
 import Loading from './Loading';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
 import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
+
+// TODO dealing with recurring expenses
 
 const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
@@ -45,7 +47,18 @@ export default function Main({ user }) {
   const [valueOfAmount, setValueOfAmount] = useState('');
 
   // state of errors in popovers
-  const [popoverError, setPopoverError] = useState('Category already exists!');
+  const [popoverError, setPopoverError] = useState('');
+
+  // focus ref
+  const inputElement = useRef(null);
+
+  // if the user opens up any of the four popovers, the input field
+  // in the popover is focused
+  useEffect(() => {
+    if (inputElement.current) {
+      inputElement.current.focus();
+    }
+  }, [openEditCategory, openEditExpense, isPopoverOpen, openElementName]);
 
   // firestore documents references
   const dbRefUser = db.collection('usersdb').doc(user.uid);
@@ -266,7 +279,7 @@ export default function Main({ user }) {
     e.preventDefault();
     const userInput = newCategoryOrExpense.trim();
 
-    // array of all expenses in the user's budget so we can compare for duplicates
+    // array of all the expenses in the user's budget so we can compare for duplicates
     const allExpenses = [];
     budgetData.expenses.forEach((category) =>
       category.expensesInCategory.forEach((expense) =>
@@ -541,6 +554,7 @@ export default function Main({ user }) {
     setOpenEditExpense(false);
   }
 
+  // changing the amount
   function handleAmountSubmit(e, category, expenseObject) {
     e.preventDefault();
 
@@ -611,7 +625,7 @@ export default function Main({ user }) {
   return loading ? (
     <Loading />
   ) : (
-    <div className="bg-gray-100 w-full p-2 flex flex-col max-h-screen">
+    <div className="bg-gray-100 w-full p-2 flex flex-col h-screen">
       <div className="bg-gray-200 flex flex-initial flex-row items-center">
         <div className="ml-20">
           <p>Your budget for</p>
@@ -656,15 +670,16 @@ export default function Main({ user }) {
               <div className="rounded-md bg-white p-2">
                 <form onSubmit={(e) => handleCategorySubmit(e)}>
                   <input
-                    className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                    className="border-2 border-blue-400 focus:border-blue-300 rounded-sm p-1 focus:ring-10"
                     spellCheck="false"
                     autoComplete="off"
                     placeholder="New Category"
                     maxLength="64"
                     type="text"
+                    ref={inputElement}
                     value={newCategoryOrExpense}
                     onChange={(e) => handleCategoryOrExpenseChange(e)}
-                  ></input>
+                  />
                   {popoverError && (
                     <div className="text-sm text-red-500">{popoverError}</div>
                   )}
@@ -718,14 +733,16 @@ export default function Main({ user }) {
                         }
                       >
                         <input
-                          className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                          className="border-2 border-blue-400 focus:border-blue-300 rounded-sm p-1 focus:ring-10"
                           spellCheck="false"
                           autoComplete="off"
                           maxLength="64"
                           type="text"
+                          placeholder="New name for this category"
+                          ref={inputElement}
                           value={nowEditingCategory}
                           onChange={(e) => handleCategoryEditChange(e)}
-                        ></input>
+                        />
                         {popoverError && (
                           <div className="text-sm text-red-500">
                             {popoverError}
@@ -791,15 +808,16 @@ export default function Main({ user }) {
                         }
                       >
                         <input
-                          className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                          className="border-2 border-blue-400 focus:border-blue-300 rounded-sm p-1 focus:ring-10"
                           spellCheck="false"
                           autoComplete="off"
                           placeholder="New Expense"
                           maxLength="64"
                           type="text"
+                          ref={inputElement}
                           value={newCategoryOrExpense}
                           onChange={(e) => handleCategoryOrExpenseChange(e)}
-                        ></input>
+                        />
                         {popoverError && (
                           <div className="text-sm text-red-500">
                             {popoverError}
@@ -868,14 +886,16 @@ export default function Main({ user }) {
                               }
                             >
                               <input
-                                className="border-2 border-blue-400 focus:placeholder-transparent focus:border-blue-300 rounded-sm p-1 focus:ring-10"
+                                className="border-2 border-blue-400 focus:border-blue-300 rounded-sm p-1 focus:ring-10"
                                 spellCheck="false"
                                 autoComplete="off"
                                 maxLength="64"
                                 type="text"
+                                placeholder="New name for this expense"
                                 value={nowEditingExpense}
+                                ref={inputElement}
                                 onChange={(e) => handleExpenseEditChange(e)}
-                              ></input>
+                              />
                               {popoverError && (
                                 <div className="text-sm text-red-500">
                                   {popoverError}
@@ -953,7 +973,7 @@ export default function Main({ user }) {
                                 maximumFractionDigits: 2,
                               })
                         }
-                      ></input>
+                      />
                     </form>
                     {currency}
                   </div>

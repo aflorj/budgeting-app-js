@@ -51,6 +51,7 @@ export default function Signup() {
               <input
                 type="email"
                 id="email"
+                autoFocus
                 autoComplete="username"
                 spellCheck="false"
                 ref={emailRef}

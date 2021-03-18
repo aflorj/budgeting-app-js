@@ -41,6 +41,7 @@ export default function Login() {
               <input
                 type="email"
                 spellCheck="false"
+                autoFocus
                 id="email"
                 autoComplete="username"
                 placeholder="your@email.com"
