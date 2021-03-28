@@ -6,7 +6,7 @@ import firebase from 'firebase/app';
 import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
 
 // TODO dealing with recurring expenses
-// TODO one state for all popups
+// useEffect with budgetState updating the db?
 
 const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
@@ -14,43 +14,21 @@ const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
 
 export default function Main({ user }) {
-  // renders loading component while the data is being fetched
+  // renders the Loading component while the data is being fetched
   const [loading, setLoading] = useState(true);
 
   // all budgeting data
-  const [budgetData, setBudgetData] = useState('');
+  const [budgetData, setBudgetData] = useState({});
 
-  // 'add category' popover and 'add inflow' popover - true or false
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isInflowOpen, setIsInflowOpen] = useState(false);
+  // popover state shared between all popovers
+  // false or name of the open popover
+  const [openPopover, setOpenPopover] = useState(false);
 
-  // holds input value from the user when creating a new category, an expense or an inflow
-  // shared state because the user can't create a category, an expense and an inflow simultaneously
-  const [newCategoryExpenseOrInflow, setNewCategoryExpenseOrInflow] = useState(
-    ''
-  );
+  // holds user input when they are creating or editing an element
+  const [userInputValue, setUserInputValue] = useState('');
 
-  // state of the 'create an expense' popup
-  // 'false' when closed or holds the name of the category under which the expense is being added
-  const [openElementName, setOpenElementName] = useState(false);
-
-  // state of the 'edit a category' and 'edit an expense' popup
-  // 'false' when closed or holds the name of the category/expense being edited
-  // TODO refactor v en skupn state (false/category_ime/expense_ime)
-  const [openEditCategory, setOpenEditCategory] = useState(false);
-  const [openEditExpense, setOpenEditExpense] = useState(false);
-
-  // when editing a category or an expense, set the starting value of the input
-  // to the current name of the category or the expense being edited
-  // TODO skupni state za vse edite (razn amounte?)
-  const [nowEditingCategory, setNowEditingCategory] = useState('');
-  const [nowEditingExpense, setNowEditingExpense] = useState('');
-
-  // editing an amount
-  // which expense's amount is being edited
-  const [nowEditingAmount, setNowEditingAmount] = useState(false);
-  // the value of that expense's amount
-  const [valueOfAmount, setValueOfAmount] = useState('');
+  // hold user input amount when it's being edited
+  const [userAmountValue, setUserAmountValue] = useState('');
 
   // state of errors in popovers
   const [popoverError, setPopoverError] = useState('');
@@ -58,19 +36,12 @@ export default function Main({ user }) {
   // focus ref
   const inputElement = useRef(null);
 
-  // if the user opens up any of the four popovers, the input field
-  // in the popover is focused
+  // focus the popover input field when it's open
   useEffect(() => {
     if (inputElement.current) {
       inputElement.current.focus();
     }
-  }, [
-    openEditCategory,
-    openEditExpense,
-    isCategoryOpen,
-    openElementName,
-    isInflowOpen,
-  ]);
+  }, [openPopover]);
 
   // firestore documents references
   const dbRefUser = db.collection('usersdb').doc(user.uid);
@@ -160,89 +131,48 @@ export default function Main({ user }) {
       });
   }, []);
 
-  // closes the 'create a category' popup and resets the input value and the popover error
-  function resetCategoryPopover() {
-    setIsCategoryOpen(false);
-    setNewCategoryExpenseOrInflow('');
+  // closes the popover and resets the input value and the error value
+  function resetPopover() {
+    setOpenPopover(false);
+    setUserInputValue('');
     setPopoverError('');
   }
 
-  // closes the 'create an expense' popup and resets the input value and the popover error
-  function resetExpensePopover() {
-    setOpenElementName(false);
-    setNewCategoryExpenseOrInflow('');
-    setPopoverError('');
-  }
-
-  // closes the 'create an inflow' popup and resets the input value and the popover error
-  function resetInflowPopover() {
-    setIsInflowOpen(false);
-    setNewCategoryExpenseOrInflow('');
-    setPopoverError('');
-  }
-
-  // closes the 'edit a category' popup and resets the input value and the popover error
-  function resetCategoryEdit() {
-    setOpenEditCategory(false);
-    setNowEditingCategory('');
-    setPopoverError('');
-  }
-
-  // closes the 'edit an expense' popup and resets the input value and the popover error
-  function resetExpenseEdit() {
-    setOpenEditExpense(false);
-    setNowEditingExpense('');
-    setPopoverError('');
-  }
-
-  // opens the edit category popover and sets the input value
-  // to the category that is being edited
-  function prepareCategoryEdit(category) {
-    setNowEditingCategory(category);
-    setOpenEditCategory(category);
-  }
-
-  // opens the edit expense popover and sets the input value
-  // to the expense that is being edited
-  function prepareExpenseEdit(expense) {
-    setNowEditingExpense(expense);
-    setOpenEditExpense(expense);
+  // prepares the category or expense edit popover
+  function prepareEdit(type, element) {
+    setUserInputValue(element);
+    setOpenPopover(type + element);
+    // using 'type_' (ex: expense_something, category_something) to prevent a bug
+    // when the user creates a category, an expense and an inflow with the same name
   }
 
   // sets the name and the value of the expense that is being edited
-  function prepareAmountEdit(expenseObject) {
-    setNowEditingAmount(expenseObject.expense);
-    if (expenseObject.amount === 0) {
+  function prepareAmountEdit(element, amount) {
+    setOpenPopover(element);
+    if (amount === 0) {
       // this fix can be removed when/if input value is highlighted on click
-      setValueOfAmount('');
+      setUserAmountValue(''); // was input not amount
     } else {
-      setValueOfAmount(expenseObject.amount);
+      setUserAmountValue(amount); // same
     }
   }
 
-  function handleCategoryExpenseOrInflowChange(e) {
-    setNewCategoryExpenseOrInflow(e.target.value);
+  // handling the change in user input and resetting the error
+  function handleInputChange(e) {
+    setUserInputValue(e.target.value);
     setPopoverError('');
   }
 
-  function handleCategoryEditChange(e) {
-    setNowEditingCategory(e.target.value);
-    setPopoverError('');
+  // exp
+  function handleAmountChange(e) {
+    setUserAmountValue(e.target.value);
   }
-
-  function handleExpenseEditChange(e) {
-    setNowEditingExpense(e.target.value);
-    setPopoverError('');
-  }
-
-  function handleAmountEditChange(e) {
-    setValueOfAmount(e.target.value);
-  }
+  //exp
 
   // adding a category
   function handleCategorySubmit(e) {
     e.preventDefault();
-    const userInput = newCategoryExpenseOrInflow.trim();
+    const userInput = userInputValue.trim();
 
     // find potential duplicates
     const categoryDuplicates = budgetData.expenses.find(
@@ -253,7 +183,7 @@ export default function Main({ user }) {
     // first check if the category with this name already exists
     if (categoryDuplicates) {
       setPopoverError('Category already exists!');
-    } else if (newCategoryExpenseOrInflow.length > 0) {
+    } else if (userInputValue.length > 0) {
       // if user entered a unique name for the new category
       // check if the name is valid
       if (userInput.length > 0) {
@@ -285,20 +215,20 @@ export default function Main({ user }) {
           }),
         });
         // reset the category popover
-        resetCategoryPopover();
+        resetPopover();
       } else {
         setPopoverError('Invalid category name!');
       }
     } else {
       // user didn't enter anything
-      resetCategoryPopover();
+      resetPopover();
     }
   }
 
   // adding an expense
   function handleExpenseSubmit(e, category) {
     e.preventDefault();
-    const userInput = newCategoryExpenseOrInflow.trim();
+    const userInput = userInputValue.trim();
 
     // array of all the expenses in the user's budget so we can compare for duplicates
     const allExpenses = [];
@@ -314,7 +244,7 @@ export default function Main({ user }) {
     // first check if the category with this name already exists
     if (expenseDuplicates) {
       setPopoverError('Expense already exists!');
-    } else if (newCategoryExpenseOrInflow.length > 0) {
+    } else if (userInputValue.length > 0) {
       // if user entered a unique name for the new category
       // check if the name is valid
       if (userInput.length > 0) {
@@ -350,30 +280,30 @@ export default function Main({ user }) {
         );
 
         // reset the expense popover
-        resetExpensePopover();
+        resetPopover();
       } else {
         setPopoverError('Invalid expense name!');
       }
     } else {
       // user didn't enter anything
-      setOpenElementName(false);
+      resetPopover();
     }
   }
 
   // adding an inflow
   function handleInflowSubmit(e) {
     e.preventDefault();
-    const userInput = newCategoryExpenseOrInflow.trim();
+    const userInput = userInputValue.trim();
 
     // find potential duplicates
     const inflowDuplicates = budgetData.inflows.find(
       (inflow) => inflow.inflowName.toLowerCase() === userInput.toLowerCase()
     );
 
-    // first check if the category with this name already exists
+    // first check if the inflow with this name already exists
     if (inflowDuplicates) {
       setPopoverError('Inflow already exists!');
-    } else if (newCategoryExpenseOrInflow.length > 0) {
+    } else if (userInputValue.length > 0) {
       // if user entered a unique name for the new inflow
       // check if the name is valid
       if (userInput.length > 0) {
@@ -405,20 +335,20 @@ export default function Main({ user }) {
           }),
         });
         // reset the inflow popover
-        resetInflowPopover();
+        resetPopover();
       } else {
         setPopoverError('Invalid inflow name!');
       }
     } else {
       // user didn't enter anything
-      resetInflowPopover();
+      resetPopover();
     }
   }
 
   // renaming a category
   function handleCategoryEditSubmit(e, category) {
     e.preventDefault();
-    const userInput = nowEditingCategory.trim();
+    const userInput = userInputValue.trim();
 
     // potential duplicates
     const categoryDuplicates = budgetData.expenses.find(
@@ -429,10 +359,10 @@ export default function Main({ user }) {
     // first check if there were any changes to the category name
     if (category === userInput) {
       // no changes, close the popover
-      resetCategoryEdit();
+      resetPopover();
     } else {
       // changes were made, check if the new name is valid
-      if (nowEditingCategory.length > 0) {
+      if (userInputValue.length > 0) {
         if (userInput.length > 0) {
           // valid input but still need to check for duplicates
           if (categoryDuplicates) {
@@ -465,7 +395,7 @@ export default function Main({ user }) {
               { merge: true }
             );
             // reset the category popover
-            resetCategoryEdit();
+            resetPopover();
           }
         } else {
           //invalid input, throw an error and leave the popover open
@@ -473,7 +403,7 @@ export default function Main({ user }) {
         }
       } else {
         // user cleared the input - cancel the edit
-        resetCategoryEdit();
+        resetPopover();
       }
     }
   }
@@ -481,7 +411,7 @@ export default function Main({ user }) {
   // renaming an expense
   function handleExpenseEditSubmit(e, category, expense) {
     e.preventDefault();
-    const userInput = nowEditingExpense.trim();
+    const userInput = userInputValue.trim();
 
     // array of all expenses in the user's budget so we can compare for duplicates
     const allExpenses = [];
@@ -497,10 +427,10 @@ export default function Main({ user }) {
     // first check if there were any changes to the expense name
     if (expense === userInput) {
       // no changes, close the popover
-      resetExpenseEdit();
+      resetPopover();
     } else {
       // changes were made, check if the new name is valid
-      if (nowEditingExpense.length > 0) {
+      if (userInputValue.length > 0) {
         if (userInput.length > 0) {
           // valid input but still need to check for duplicates
           if (expenseDuplicates) {
@@ -541,7 +471,7 @@ export default function Main({ user }) {
               { merge: true }
             );
             // reset the expense popover
-            resetExpenseEdit();
+            resetPopover();
           }
         } else {
           // invalid input, throw an error and leave the popover open
@@ -549,7 +479,69 @@ export default function Main({ user }) {
         }
       } else {
         // user cleared the input - cancel the edit
-        resetExpenseEdit();
+        resetPopover();
+      }
+    }
+  }
+
+  // renaming an inflow
+  function handleInflowEditSubmit(e, inflow) {
+    e.preventDefault();
+    const userInput = userInputValue.trim();
+
+    // potential duplicates
+    const inflowDuplicates = budgetData.inflows.find(
+      (element) => element.inflowName.toLowerCase() === userInput.toLowerCase()
+    );
+
+    // first check if there were any changes to the inflow name
+    if (inflow === userInput) {
+      // no changes, close the popover
+      resetPopover();
+    } else {
+      // changes were made, check if the new name is valid
+      if (userInputValue.length > 0) {
+        if (userInput.length > 0) {
+          // valid input but still need to check for duplicates
+          if (inflowDuplicates) {
+            // the new inflow name is not unique, throw an error and leave the popover open
+            setPopoverError('Inflow already exists!');
+          } else {
+            // the new inflow name is unique
+            // change the inflow name and close the popover
+
+            // find the index of the inflow that we want to edit the name of
+            const inflowsIndex = budgetData.inflows.findIndex(
+              (element) => element.inflowName === inflow
+            );
+
+            // create a copy of the inflows array
+            // find the correct inflow and rename it
+            let inflowsArrayCopy = [...budgetData.inflows];
+            inflowsArrayCopy[inflowsIndex].inflowName = userInput;
+
+            setBudgetData((budgetData) => ({
+              ...budgetData,
+              inflows: inflowsArrayCopy,
+            }));
+
+            // apply the changes to the db
+            docRefCurrentMonth.set(
+              {
+                inflows: budgetData.inflows,
+              },
+              { merge: true }
+            );
+            // reset the inflows popover
+            resetPopover();
+          }
+        } else {
+          // invalid input, throw an error and leave the popover open
+          setPopoverError('Invalid inflow name!');
+        }
+      } else {
+        // user cleared the input - cancel the edit
+        resetPopover();
       }
     }
   }
@@ -587,7 +579,7 @@ export default function Main({ user }) {
       expenses: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
     });
 
-    setOpenEditCategory(false);
+    setOpenPopover(false);
   }
 
   // removing an expense
@@ -627,10 +619,44 @@ export default function Main({ user }) {
 
     // TODO recurring doc
 
-    setOpenEditExpense(false);
+    setOpenPopover(false);
   }
 
-  // changing the amount
+  // removing an inflow
+  // TODO handling the recurring doc
+  function deleteInflow(e, inflow) {
+    e.preventDefault();
+
+    // find the index of the object we're removing from the array
+    const indexToRemove = budgetData.inflows.findIndex(
+      (element) => element.inflowName === inflow
+    );
+
+    // delete the inflow from the local data
+    let inflowsArrayCopy = [...budgetData.inflows];
+    inflowsArrayCopy.splice(indexToRemove, 1);
+    setBudgetData((budgetData) => ({
+      ...budgetData,
+      inflows: inflowsArrayCopy,
+    }));
+
+    // delete the inflow from the db
+    const objectToRemove = budgetData.inflows[indexToRemove];
+
+    // 'current month' document
+    docRefCurrentMonth.update({
+      inflows: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
+    });
+
+    // 'recurring' document
+    docRefRecurringData.update({
+      inflows: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
+    });
+
+    setOpenPopover(false);
+  }
+
+  // changing the amount of an expense
   function handleAmountSubmit(e, category, expenseObject) {
     e.preventDefault();
 
@@ -647,7 +673,7 @@ export default function Main({ user }) {
     );
 
     // clearing the input and submitting equals to setting the expense amount to zero
-    if (valueOfAmount.length === 0) {
+    if (userAmountValue.length === 0) {
       let expensesArrayCopy = [...budgetData.expenses];
       expensesArrayCopy[indexOfCategory].expensesInCategory[
         indexOfExpense
@@ -670,15 +696,15 @@ export default function Main({ user }) {
       // the user has changed the amount of this expense and did not leave the input field empty
       // and the value of the input was a number
       if (
-        expenseObject.amount !== parseFloat(valueOfAmount) &&
-        !isNaN(valueOfAmount)
+        expenseObject.amount !== parseFloat(userAmountValue) &&
+        !isNaN(userAmountValue)
       ) {
         // apply the changes to the local state
         // copy of the array of the expenses in the category the edited expense belongs to
         let expensesArrayCopy = [...budgetData.expenses];
         expensesArrayCopy[indexOfCategory].expensesInCategory[
           indexOfExpense
-        ].amount = parseFloat(valueOfAmount);
+        ].amount = parseFloat(userAmountValue);
         setBudgetData((budgetData) => ({
           ...budgetData,
           expenses: expensesArrayCopy,
@@ -695,7 +721,62 @@ export default function Main({ user }) {
       }
     }
 
-    setNowEditingAmount(false);
+    setOpenPopover(false);
+  }
+
+  // changing the amount of an inflow
+  function handleInflowAmountSubmit(e, inflow) {
+    e.preventDefault();
+
+    // the index of the inflow and a copy of the inflows array
+    const indexOfInflow = budgetData.inflows.findIndex(
+      (element) => element.inflowName === inflow.inflowName
+    );
+    let inflowsArrayCopy = [...budgetData.inflows];
+
+    // clearing the input and submitting equals to setting the inflow amount to zero
+    if (userAmountValue.length === 0) {
+      inflowsArrayCopy[indexOfInflow].amount = 0;
+
+      // set it to zero in the local state
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        inflows: inflowsArrayCopy,
+      }));
+
+      // set it to zero in the db
+      docRefCurrentMonth.set(
+        {
+          inflows: budgetData.inflows,
+        },
+        { merge: true }
+      );
+    } else {
+      // the user has changed the amount of this inflow and did not leave the input field empty
+      // and the value of the input was a number
+      if (
+        inflow.amount !== parseFloat(userAmountValue) &&
+        !isNaN(userAmountValue)
+      ) {
+        // apply the changes to the local state
+        inflowsArrayCopy[indexOfInflow].amount = parseFloat(userAmountValue);
+        setBudgetData((budgetData) => ({
+          ...budgetData,
+          inflows: inflowsArrayCopy,
+        }));
+
+        // and db changes
+        docRefCurrentMonth.set(
+          {
+            inflows: budgetData.inflows,
+          },
+          { merge: true }
+        );
+        // TODO recurring
+      }
+    }
+
+    setOpenPopover(false);
   }
 
   return loading ? (
@@ -722,7 +803,7 @@ export default function Main({ user }) {
           <p>+0.00€ Funds for {MONTHS[currentMonth]}</p>
           <p>
             -0.00€ Overspent in{' '}
-            {MONTHS[currentMonth === 0 ? 10 : currentMonth - 1]}
+            {MONTHS[currentMonth === 0 ? 11 : currentMonth - 1]}
           </p>
           <p>-0.00€ Budgeted in {MONTHS[currentMonth]}</p>
           <p>-0.00€ Budgeted in Future</p>
@@ -731,14 +812,13 @@ export default function Main({ user }) {
 
       <div className="overflow-y-auto m-2 flex-col space-y-2">
         <div id="all-inflows-wrapper" className="flex flex-col">
-          {/* WIP */}
           <div className="flex items-center">
             <p className="text-xl font-bold underline">Inflows</p>
-            {/* n1 Za dodat inflow start */}
+            {/* add in inflow popover - start */}
             <Popover
-              isOpen={isInflowOpen}
+              isOpen={openPopover === 'inflow'}
               positions={['bottom', 'right']}
-              onClickOutside={() => resetInflowPopover()}
+              onClickOutside={() => resetPopover()}
               content={({ position, childRect, popoverRect }) => (
                 <ArrowContainer
                   position={position}
@@ -758,8 +838,8 @@ export default function Main({ user }) {
                         maxLength="64"
                         type="text"
                         ref={inputElement}
-                        value={newCategoryExpenseOrInflow}
-                        onChange={(e) => handleCategoryExpenseOrInflowChange(e)}
+                        value={userInputValue}
+                        onChange={(e) => handleInputChange(e)}
                       />
                       {popoverError && (
                         <div className="text-sm text-red-500">
@@ -769,7 +849,7 @@ export default function Main({ user }) {
                       <div className="pt-2 flex justify-end">
                         <button
                           type="button"
-                          onClick={() => resetInflowPopover()}
+                          onClick={() => resetPopover()}
                           className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                         >
                           Cancel
@@ -789,24 +869,130 @@ export default function Main({ user }) {
               <div className="inline-block">
                 <button
                   className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
-                  onClick={() => setIsInflowOpen(!isInflowOpen)}
+                  onClick={() =>
+                    openPopover === 'inflow'
+                      ? resetPopover()
+                      : setOpenPopover('inflow')
+                  }
                 >
                   +
                 </button>
               </div>
             </Popover>
-            {/* n1 Za dodat inflow end */}
+            {/* add an inflow popover - end */}
           </div>
           <div>
             {budgetData.inflows.length ? (
               budgetData.inflows.map((inflow) => (
                 <div className="flex space-x-2">
-                  <div>{inflow.inflowName}:</div>
                   <div>
-                    {inflow.amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    <div className="cursor-pointer">
+                      {/* edit an inflow popover - start */}
+                      <Popover
+                        isOpen={openPopover === 'inflow_' + inflow.inflowName}
+                        positions={['bottom', 'top']}
+                        onClickOutside={() => resetPopover()}
+                        content={({ position, childRect, popoverRect }) => (
+                          <ArrowContainer
+                            position={position}
+                            childRect={childRect}
+                            popoverRect={popoverRect}
+                            arrowColor={'white'}
+                            arrowSize={10}
+                            arrowStyle={{ opacity: 0.7 }}
+                          >
+                            <div className="rounded-md bg-white p-2">
+                              <form
+                                onSubmit={(e) =>
+                                  handleInflowEditSubmit(e, inflow.inflowName)
+                                }
+                              >
+                                <input
+                                  className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                  spellCheck="false"
+                                  autoComplete="off"
+                                  maxLength="64"
+                                  type="text"
+                                  placeholder="New name for this category"
+                                  ref={inputElement}
+                                  value={userInputValue}
+                                  onChange={(e) => handleInputChange(e)}
+                                />
+                                {popoverError && (
+                                  <div className="text-sm text-red-500">
+                                    {popoverError}
+                                  </div>
+                                )}
+                                <div className="pt-2 flex justify-between">
+                                  <button
+                                    type="button"
+                                    onClick={(e) =>
+                                      deleteInflow(e, inflow.inflowName)
+                                    }
+                                    className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                  >
+                                    Delete
+                                  </button>
+                                  <div className="flex">
+                                    <button
+                                      type="button"
+                                      onClick={() => resetPopover()}
+                                      className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                    >
+                                      OK
+                                    </button>
+                                  </div>
+                                </div>
+                              </form>
+                            </div>
+                          </ArrowContainer>
+                        )}
+                      >
+                        <div
+                          className="pl-2 flex hover:text-gray-600"
+                          onClick={() =>
+                            openPopover === 'inflow_' + inflow.inflowName
+                              ? resetPopover()
+                              : prepareEdit('inflow_', inflow.inflowName)
+                          }
+                        >
+                          {inflow.inflowName}:
+                        </div>
+                      </Popover>
+                      {/* edit an inflow popover - end  */}
+                    </div>
+                  </div>
+
+                  <div className="px-1 flex">
+                    <form onSubmit={(e) => handleInflowAmountSubmit(e, inflow)}>
+                      <input
+                        className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                        id="inflow-amount"
+                        key={inflow.inflowName}
+                        type="text"
+                        onClick={() =>
+                          prepareAmountEdit(inflow.inflowName, inflow.amount)
+                        }
+                        onChange={(e) => handleAmountChange(e)}
+                        onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
+                        spellCheck="false"
+                        autoComplete="false"
+                        value={
+                          openPopover === inflow.inflowName
+                            ? userAmountValue
+                            : inflow.amount.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                        }
+                      />
+                    </form>
                     {currency}
                   </div>
                 </div>
@@ -817,16 +1003,15 @@ export default function Main({ user }) {
               </div>
             )}
           </div>
-          {/* WIP */}
         </div>
         <div id="all-expenses-wrapper" className="">
           <div id="little-wrapper" className="flex space-x-1 items-end">
             <p className="text-xl font-bold underline">Expenses</p>
-            {/* n2 Za dodat kategorijo start */}
+            {/* adding a category popover - start */}
             <Popover
-              isOpen={isCategoryOpen}
+              isOpen={openPopover === 'addCategory'}
               positions={['bottom', 'right']}
-              onClickOutside={() => resetCategoryPopover()}
+              onClickOutside={() => resetPopover()}
               content={({ position, childRect, popoverRect }) => (
                 <ArrowContainer
                   position={position}
@@ -846,8 +1031,8 @@ export default function Main({ user }) {
                         maxLength="64"
                         type="text"
                         ref={inputElement}
-                        value={newCategoryExpenseOrInflow}
-                        onChange={(e) => handleCategoryExpenseOrInflowChange(e)}
+                        value={userInputValue}
+                        onChange={(e) => handleInputChange(e)}
                       />
                       {popoverError && (
                         <div className="text-sm text-red-500">
@@ -857,7 +1042,7 @@ export default function Main({ user }) {
                       <div className="pt-2 flex justify-end">
                         <button
                           type="button"
-                          onClick={() => resetCategoryPopover()}
+                          onClick={() => resetPopover()}
                           className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                         >
                           Cancel
@@ -876,21 +1061,25 @@ export default function Main({ user }) {
             >
               <button
                 className="focus:outline-white inline-block px-1 border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-md cursor-pointer text-sm"
-                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                onClick={() =>
+                  openPopover === 'addCategory'
+                    ? setOpenPopover(false)
+                    : setOpenPopover('addCategory')
+                }
               >
                 + Category
               </button>
             </Popover>
-            {/* n2 Za dodat kategorijo end */}
+            {/* adding a category popover - end */}
           </div>
           <div>
             {budgetData.expenses.map((el) => (
               <div className="p-2" key={el.categoryName}>
-                {/* n3 Za editat kategorijo start */}
+                {/* editing a category popover - start */}
                 <Popover
-                  isOpen={openEditCategory === el.categoryName}
+                  isOpen={openPopover === 'category_' + el.categoryName}
                   positions={['bottom', 'top']}
-                  onClickOutside={() => resetCategoryEdit()}
+                  onClickOutside={() => resetPopover()}
                   content={({ position, childRect, popoverRect }) => (
                     <ArrowContainer
                       position={position}
@@ -914,8 +1103,8 @@ export default function Main({ user }) {
                             type="text"
                             placeholder="New name for this category"
                             ref={inputElement}
-                            value={nowEditingCategory}
-                            onChange={(e) => handleCategoryEditChange(e)}
+                            value={userInputValue}
+                            onChange={(e) => handleInputChange(e)}
                           />
                           {popoverError && (
                             <div className="text-sm text-red-500">
@@ -935,7 +1124,7 @@ export default function Main({ user }) {
                             <div className="flex">
                               <button
                                 type="button"
-                                onClick={() => resetCategoryEdit()}
+                                onClick={() => resetPopover()}
                                 className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                               >
                                 Cancel
@@ -956,20 +1145,20 @@ export default function Main({ user }) {
                   <div
                     className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
                     onClick={() =>
-                      openEditCategory === false
-                        ? prepareCategoryEdit(el.categoryName)
-                        : setOpenEditCategory(false)
+                      openPopover === 'category_' + el.categoryName
+                        ? resetPopover()
+                        : prepareEdit('category_', el.categoryName)
                     }
                   >
                     {el.categoryName}
                   </div>
                 </Popover>
-                {/* n3 Za editat kategorijo end */}
-                {/* n4 Za dodat expense start */}
+                {/* editing a category popover - start */}
+                {/* adding an expense popover - start */}
                 <Popover
-                  isOpen={openElementName === el.categoryName}
+                  isOpen={openPopover === 'addExpense_' + el.categoryName}
                   positions={['right']}
-                  onClickOutside={() => resetExpensePopover()}
+                  onClickOutside={() => resetPopover()}
                   content={({ position, childRect, popoverRect }) => (
                     <ArrowContainer
                       position={position}
@@ -993,10 +1182,8 @@ export default function Main({ user }) {
                             maxLength="64"
                             type="text"
                             ref={inputElement}
-                            value={newCategoryExpenseOrInflow}
-                            onChange={(e) =>
-                              handleCategoryExpenseOrInflowChange(e)
-                            }
+                            value={userInputValue}
+                            onChange={(e) => handleInputChange(e)}
                           />
                           {popoverError && (
                             <div className="text-sm text-red-500">
@@ -1006,7 +1193,7 @@ export default function Main({ user }) {
                           <div className="pt-2 flex justify-end">
                             <button
                               type="button"
-                              onClick={() => resetExpensePopover()}
+                              onClick={() => resetPopover()}
                               className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                             >
                               Cancel
@@ -1027,16 +1214,16 @@ export default function Main({ user }) {
                     <button
                       className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
                       onClick={() =>
-                        openElementName === false
-                          ? setOpenElementName(el.categoryName)
-                          : setOpenElementName(false)
+                        openPopover === 'addExpense_' + el.categoryName
+                          ? resetPopover()
+                          : setOpenPopover('addExpense_' + el.categoryName)
                       }
                     >
                       +
                     </button>
                   </div>
                 </Popover>
-                {/* n4 Za dodat expense end */}
+                {/* adding an expense popover - end */}
                 {el.expensesInCategory.length ? (
                   el.expensesInCategory.map((expenseObject) => (
                     <div
@@ -1045,11 +1232,13 @@ export default function Main({ user }) {
                       key={expenseObject.expense}
                     >
                       <div className="cursor-pointer">
-                        {/* n5 Za editat expense start */}
+                        {/* editting an expense - start */}
                         <Popover
-                          isOpen={openEditExpense === expenseObject.expense}
+                          isOpen={
+                            openPopover === 'expense_' + expenseObject.expense
+                          }
                           positions={['bottom', 'top']}
-                          onClickOutside={() => resetExpenseEdit()}
+                          onClickOutside={() => resetPopover()}
                           content={({ position, childRect, popoverRect }) => (
                             <ArrowContainer
                               position={position}
@@ -1076,9 +1265,9 @@ export default function Main({ user }) {
                                     maxLength="64"
                                     type="text"
                                     placeholder="New name for this expense"
-                                    value={nowEditingExpense}
+                                    value={userInputValue}
                                     ref={inputElement}
-                                    onChange={(e) => handleExpenseEditChange(e)}
+                                    onChange={(e) => handleInputChange(e)}
                                   />
                                   {popoverError && (
                                     <div className="text-sm text-red-500">
@@ -1102,7 +1291,7 @@ export default function Main({ user }) {
                                     <div className="flex">
                                       <button
                                         type="button"
-                                        onClick={() => resetExpenseEdit()}
+                                        onClick={() => resetPopover()}
                                         className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                                       >
                                         Cancel
@@ -1121,18 +1310,19 @@ export default function Main({ user }) {
                           )}
                         >
                           <div
-                            className="pl-2 flex justify-between hover:text-gray-600"
+                            className="pl-2 flex hover:text-gray-600"
+                            // ta CN je meu tud justify-between, why?
                             id="expense-name"
                             onClick={() =>
-                              openEditExpense === false
-                                ? prepareExpenseEdit(expenseObject.expense)
-                                : setOpenEditExpense(false)
+                              openPopover === 'expense_' + expenseObject.expense
+                                ? resetPopover()
+                                : prepareEdit('expense_', expenseObject.expense)
                             }
                           >
                             {expenseObject.expense}
                           </div>
                         </Popover>
-                        {/* n5 Za editat expense end */}
+                        {/* editing an expenes - end */}
                       </div>
                       <div className="px-1 flex">
                         <form
@@ -1149,8 +1339,13 @@ export default function Main({ user }) {
                             id="amount"
                             key={expenseObject.expense}
                             type="text"
-                            onClick={() => prepareAmountEdit(expenseObject)}
-                            onChange={(e) => handleAmountEditChange(e)}
+                            onClick={() =>
+                              prepareAmountEdit(
+                                expenseObject.expense,
+                                expenseObject.amount
+                              )
+                            }
+                            onChange={(e) => handleAmountChange(e)}
                             onBlur={(e) =>
                               handleAmountSubmit(
                                 e,
@@ -1159,10 +1354,10 @@ export default function Main({ user }) {
                               )
                             }
                             spellCheck="false"
-                            autoComplete="false"
+                            autoComplete="off"
                             value={
-                              nowEditingAmount === expenseObject.expense
-                                ? valueOfAmount
+                              openPopover === expenseObject.expense
+                                ? userAmountValue
                                 : expenseObject.amount.toLocaleString(
                                     undefined,
                                     {
