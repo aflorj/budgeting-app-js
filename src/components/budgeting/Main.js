@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { db } from '../../firebase';
 import Loading from './Loading';
+import Charts from './Charts';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
 import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
@@ -21,7 +22,7 @@ export default function Main({ user }) {
   const [budgetData, setBudgetData] = useState({});
 
   // popover state shared between all popovers
-  // false or name of the open popover
+  // false or the name of the currently open popover
   const [openPopover, setOpenPopover] = useState(false);
 
   // holds user input when they are creating or editing an element
@@ -30,7 +31,7 @@ export default function Main({ user }) {
   // hold user input amount when it's being edited
   const [userAmountValue, setUserAmountValue] = useState('');
 
-  // state of errors in popovers
+  // state of the errors in the popovers
   const [popoverError, setPopoverError] = useState('');
 
   // focus ref
@@ -163,11 +164,10 @@ export default function Main({ user }) {
     setPopoverError('');
   }
 
-  // exp
+  // handing the change in user input when the input is a number
   function handleAmountChange(e) {
     setUserAmountValue(e.target.value);
   }
-  //exp
 
   // adding a category
   function handleCategorySubmit(e) {
@@ -319,15 +319,7 @@ export default function Main({ user }) {
           ],
         }));
 
-        // update user's inflows in the recurring document
-        /* docRefRecurringData.update({
-          inflows: firebase.firestore.FieldValue.arrayUnion({
-            inflowName: userInput,
-            amount: 0,
-          }),
-        }); */
-
-        // update user's categories in the user's current month document
+        // update user's inflows in the user's current month document
         docRefCurrentMonth.update({
           inflows: firebase.firestore.FieldValue.arrayUnion({
             inflowName: userInput,
@@ -779,19 +771,41 @@ export default function Main({ user }) {
     setOpenPopover(false);
   }
 
+  function calculateBudget() {
+    let totalBudget = 0;
+    budgetData.inflows.forEach((element) => (totalBudget += element.amount));
+    return totalBudget;
+  }
+
+  function calculateAlreadyBudgeted() {
+    let alreadyBudgeted = 0;
+    budgetData.expenses.forEach((category) =>
+      category.expensesInCategory.forEach(
+        (expense) => (alreadyBudgeted += expense.amount)
+      )
+    );
+    return alreadyBudgeted;
+  }
+
+  function calculateToBeBudgeted() {
+    let tbb = 0 + calculateBudget();
+    return tbb - calculateAlreadyBudgeted();
+  }
+
   return loading ? (
     <Loading />
   ) : (
     <div className="bg-gray-100 w-full p-2 flex flex-col h-screen">
+      {/* head start */}
       <div className="bg-gray-200 flex flex-initial flex-row items-center">
-        <div className="ml-20">
-          <p>Your budget for</p>
+        <div className="flex-col ml-20">
+          <div>Your budget for</div>
           <div className="font-bold text-xl">
             {MONTHS[currentMonth]} {currentYear}
           </div>
         </div>
         <div className="font-extrabold text-white p-5 ml-40 bg-green-400 rounded-md">
-          {budgetData.budget.toLocaleString(undefined, {
+          {calculateToBeBudgeted().toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}{' '}
@@ -800,443 +814,113 @@ export default function Main({ user }) {
           <p className="font-normal">to be budgeted</p>
         </div>
         <div className="flex flex-col text-sm ml-2">
-          <p>+0.00€ Funds for {MONTHS[currentMonth]}</p>
+          <p>
+            +
+            {calculateBudget().toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+            € Funds for {MONTHS[currentMonth]}
+          </p>
           <p>
             -0.00€ Overspent in{' '}
             {MONTHS[currentMonth === 0 ? 11 : currentMonth - 1]}
           </p>
-          <p>-0.00€ Budgeted in {MONTHS[currentMonth]}</p>
+          <p>
+            -
+            {calculateAlreadyBudgeted().toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+            € Budgeted in {MONTHS[currentMonth]}
+          </p>
           <p>-0.00€ Budgeted in Future</p>
         </div>
       </div>
-
-      <div className="overflow-y-auto m-2 flex-col space-y-2">
-        <div id="all-inflows-wrapper" className="flex flex-col">
-          <div className="flex items-center">
-            <p className="text-xl font-bold underline">Inflows</p>
-            {/* add in inflow popover - start */}
-            <Popover
-              isOpen={openPopover === 'inflow'}
-              positions={['bottom', 'right']}
-              onClickOutside={() => resetPopover()}
-              content={({ position, childRect, popoverRect }) => (
-                <ArrowContainer
-                  position={position}
-                  childRect={childRect}
-                  popoverRect={popoverRect}
-                  arrowColor={'white'}
-                  arrowSize={10}
-                  arrowStyle={{ opacity: 0.7 }}
-                >
-                  <div className="rounded-md bg-white p-2">
-                    <form onSubmit={(e) => handleInflowSubmit(e)}>
-                      <input
-                        className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                        spellCheck="false"
-                        autoComplete="off"
-                        placeholder="New Inflow"
-                        maxLength="64"
-                        type="text"
-                        ref={inputElement}
-                        value={userInputValue}
-                        onChange={(e) => handleInputChange(e)}
-                      />
-                      {popoverError && (
-                        <div className="text-sm text-red-500">
-                          {popoverError}
-                        </div>
-                      )}
-                      <div className="pt-2 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => resetPopover()}
-                          className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                        >
-                          OK
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </ArrowContainer>
-              )}
-            >
-              <div className="inline-block">
-                <button
-                  className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
-                  onClick={() =>
-                    openPopover === 'inflow'
-                      ? resetPopover()
-                      : setOpenPopover('inflow')
-                  }
-                >
-                  +
-                </button>
-              </div>
-            </Popover>
-            {/* add an inflow popover - end */}
-          </div>
-          <div>
-            {budgetData.inflows.length ? (
-              budgetData.inflows.map((inflow) => (
-                <div className="flex space-x-2">
-                  <div>
-                    <div className="cursor-pointer">
-                      {/* edit an inflow popover - start */}
-                      <Popover
-                        isOpen={openPopover === 'inflow_' + inflow.inflowName}
-                        positions={['bottom', 'top']}
-                        onClickOutside={() => resetPopover()}
-                        content={({ position, childRect, popoverRect }) => (
-                          <ArrowContainer
-                            position={position}
-                            childRect={childRect}
-                            popoverRect={popoverRect}
-                            arrowColor={'white'}
-                            arrowSize={10}
-                            arrowStyle={{ opacity: 0.7 }}
-                          >
-                            <div className="rounded-md bg-white p-2">
-                              <form
-                                onSubmit={(e) =>
-                                  handleInflowEditSubmit(e, inflow.inflowName)
-                                }
-                              >
-                                <input
-                                  className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                                  spellCheck="false"
-                                  autoComplete="off"
-                                  maxLength="64"
-                                  type="text"
-                                  placeholder="New name for this category"
-                                  ref={inputElement}
-                                  value={userInputValue}
-                                  onChange={(e) => handleInputChange(e)}
-                                />
-                                {popoverError && (
-                                  <div className="text-sm text-red-500">
-                                    {popoverError}
-                                  </div>
-                                )}
-                                <div className="pt-2 flex justify-between">
-                                  <button
-                                    type="button"
-                                    onClick={(e) =>
-                                      deleteInflow(e, inflow.inflowName)
-                                    }
-                                    className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                  >
-                                    Delete
-                                  </button>
-                                  <div className="flex">
-                                    <button
-                                      type="button"
-                                      onClick={() => resetPopover()}
-                                      className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      type="submit"
-                                      className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                                    >
-                                      OK
-                                    </button>
-                                  </div>
-                                </div>
-                              </form>
-                            </div>
-                          </ArrowContainer>
-                        )}
-                      >
-                        <div
-                          className="pl-2 flex hover:text-gray-600"
-                          onClick={() =>
-                            openPopover === 'inflow_' + inflow.inflowName
-                              ? resetPopover()
-                              : prepareEdit('inflow_', inflow.inflowName)
-                          }
-                        >
-                          {inflow.inflowName}:
-                        </div>
-                      </Popover>
-                      {/* edit an inflow popover - end  */}
-                    </div>
-                  </div>
-
-                  <div className="px-1 flex">
-                    <form onSubmit={(e) => handleInflowAmountSubmit(e, inflow)}>
-                      <input
-                        className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
-                        id="inflow-amount"
-                        key={inflow.inflowName}
-                        type="text"
-                        onClick={() =>
-                          prepareAmountEdit(inflow.inflowName, inflow.amount)
-                        }
-                        onChange={(e) => handleAmountChange(e)}
-                        onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
-                        spellCheck="false"
-                        autoComplete="false"
-                        value={
-                          openPopover === inflow.inflowName
-                            ? userAmountValue
-                            : inflow.amount.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })
-                        }
-                      />
-                    </form>
-                    {currency}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="pl-2 text-sm italic text-gray-700">
-                No inflows.
-              </div>
-            )}
-          </div>
-        </div>
-        <div id="all-expenses-wrapper" className="">
-          <div id="little-wrapper" className="flex space-x-1 items-end">
-            <p className="text-xl font-bold underline">Expenses</p>
-            {/* adding a category popover - start */}
-            <Popover
-              isOpen={openPopover === 'addCategory'}
-              positions={['bottom', 'right']}
-              onClickOutside={() => resetPopover()}
-              content={({ position, childRect, popoverRect }) => (
-                <ArrowContainer
-                  position={position}
-                  childRect={childRect}
-                  popoverRect={popoverRect}
-                  arrowColor={'white'}
-                  arrowSize={10}
-                  arrowStyle={{ opacity: 0.7 }}
-                >
-                  <div className="rounded-md bg-white p-2">
-                    <form onSubmit={(e) => handleCategorySubmit(e)}>
-                      <input
-                        className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                        spellCheck="false"
-                        autoComplete="off"
-                        placeholder="New Category"
-                        maxLength="64"
-                        type="text"
-                        ref={inputElement}
-                        value={userInputValue}
-                        onChange={(e) => handleInputChange(e)}
-                      />
-                      {popoverError && (
-                        <div className="text-sm text-red-500">
-                          {popoverError}
-                        </div>
-                      )}
-                      <div className="pt-2 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => resetPopover()}
-                          className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                        >
-                          OK
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </ArrowContainer>
-              )}
-            >
-              <button
-                className="focus:outline-white inline-block px-1 border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-md cursor-pointer text-sm"
-                onClick={() =>
-                  openPopover === 'addCategory'
-                    ? setOpenPopover(false)
-                    : setOpenPopover('addCategory')
-                }
-              >
-                + Category
-              </button>
-            </Popover>
-            {/* adding a category popover - end */}
-          </div>
-          <div>
-            {budgetData.expenses.map((el) => (
-              <div className="p-2" key={el.categoryName}>
-                {/* editing a category popover - start */}
-                <Popover
-                  isOpen={openPopover === 'category_' + el.categoryName}
-                  positions={['bottom', 'top']}
-                  onClickOutside={() => resetPopover()}
-                  content={({ position, childRect, popoverRect }) => (
-                    <ArrowContainer
-                      position={position}
-                      childRect={childRect}
-                      popoverRect={popoverRect}
-                      arrowColor={'white'}
-                      arrowSize={10}
-                      arrowStyle={{ opacity: 0.7 }}
-                    >
-                      <div className="rounded-md bg-white p-2">
-                        <form
-                          onSubmit={(e) =>
-                            handleCategoryEditSubmit(e, el.categoryName)
-                          }
-                        >
-                          <input
-                            className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                            spellCheck="false"
-                            autoComplete="off"
-                            maxLength="64"
-                            type="text"
-                            placeholder="New name for this category"
-                            ref={inputElement}
-                            value={userInputValue}
-                            onChange={(e) => handleInputChange(e)}
-                          />
-                          {popoverError && (
-                            <div className="text-sm text-red-500">
-                              {popoverError}
-                            </div>
-                          )}
-                          <div className="pt-2 flex justify-between">
-                            <button
-                              type="button"
-                              onClick={(e) =>
-                                deleteCategory(e, el.categoryName)
-                              }
-                              className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                            >
-                              Delete
-                            </button>
-                            <div className="flex">
-                              <button
-                                type="button"
-                                onClick={() => resetPopover()}
-                                className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                              >
-                                OK
-                              </button>
-                            </div>
+      {/* head end */}
+      {/* core start */}
+      <div className="flex flex-col lg:flex-row">
+        {/* left side of the core start */}
+        <div className="overflow-y-auto m-2 flex-col space-y-2 w-1/2">
+          <div id="all-inflows-wrapper" className="flex flex-col">
+            <div className="flex items-center">
+              <p className="text-xl font-bold underline">Inflows</p>
+              {/* add in inflow popover - start */}
+              <Popover
+                isOpen={openPopover === 'inflow'}
+                positions={['bottom', 'right']}
+                onClickOutside={() => resetPopover()}
+                content={({ position, childRect, popoverRect }) => (
+                  <ArrowContainer
+                    position={position}
+                    childRect={childRect}
+                    popoverRect={popoverRect}
+                    arrowColor={'white'}
+                    arrowSize={10}
+                    arrowStyle={{ opacity: 0.7 }}
+                  >
+                    <div className="rounded-md bg-white p-2">
+                      <form onSubmit={(e) => handleInflowSubmit(e)}>
+                        <input
+                          className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                          spellCheck="false"
+                          autoComplete="off"
+                          placeholder="New Inflow"
+                          maxLength="64"
+                          type="text"
+                          ref={inputElement}
+                          value={userInputValue}
+                          onChange={(e) => handleInputChange(e)}
+                        />
+                        {popoverError && (
+                          <div className="text-sm text-red-500">
+                            {popoverError}
                           </div>
-                        </form>
-                      </div>
-                    </ArrowContainer>
-                  )}
-                >
-                  <div
-                    className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
+                        )}
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => resetPopover()}
+                            className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </ArrowContainer>
+                )}
+              >
+                <div className="inline-block">
+                  <button
+                    className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
                     onClick={() =>
-                      openPopover === 'category_' + el.categoryName
+                      openPopover === 'inflow'
                         ? resetPopover()
-                        : prepareEdit('category_', el.categoryName)
+                        : setOpenPopover('inflow')
                     }
                   >
-                    {el.categoryName}
-                  </div>
-                </Popover>
-                {/* editing a category popover - start */}
-                {/* adding an expense popover - start */}
-                <Popover
-                  isOpen={openPopover === 'addExpense_' + el.categoryName}
-                  positions={['right']}
-                  onClickOutside={() => resetPopover()}
-                  content={({ position, childRect, popoverRect }) => (
-                    <ArrowContainer
-                      position={position}
-                      childRect={childRect}
-                      popoverRect={popoverRect}
-                      arrowColor={'white'}
-                      arrowSize={10}
-                      arrowStyle={{ opacity: 0.7 }}
-                    >
-                      <div className="rounded-md bg-white p-2">
-                        <form
-                          onSubmit={(e) =>
-                            handleExpenseSubmit(e, el.categoryName)
-                          }
-                        >
-                          <input
-                            className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                            spellCheck="false"
-                            autoComplete="off"
-                            placeholder="New Expense"
-                            maxLength="64"
-                            type="text"
-                            ref={inputElement}
-                            value={userInputValue}
-                            onChange={(e) => handleInputChange(e)}
-                          />
-                          {popoverError && (
-                            <div className="text-sm text-red-500">
-                              {popoverError}
-                            </div>
-                          )}
-                          <div className="pt-2 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => resetPopover()}
-                              className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                            >
-                              OK
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    </ArrowContainer>
-                  )}
-                >
-                  <div className="inline-block">
-                    <button
-                      className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
-                      onClick={() =>
-                        openPopover === 'addExpense_' + el.categoryName
-                          ? resetPopover()
-                          : setOpenPopover('addExpense_' + el.categoryName)
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                </Popover>
-                {/* adding an expense popover - end */}
-                {el.expensesInCategory.length ? (
-                  el.expensesInCategory.map((expenseObject) => (
-                    <div
-                      className="border-b-2 hover:border-gray-400 pl-2 flex justify-between"
-                      id="expense-line"
-                      key={expenseObject.expense}
-                    >
+                    +
+                  </button>
+                </div>
+              </Popover>
+              {/* add an inflow popover - end */}
+            </div>
+            <div>
+              {budgetData.inflows.length ? (
+                budgetData.inflows.map((inflow) => (
+                  <div className="flex space-x-2">
+                    <div>
                       <div className="cursor-pointer">
-                        {/* editting an expense - start */}
+                        {/* edit an inflow popover - start */}
                         <Popover
-                          isOpen={
-                            openPopover === 'expense_' + expenseObject.expense
-                          }
+                          isOpen={openPopover === 'inflow_' + inflow.inflowName}
                           positions={['bottom', 'top']}
                           onClickOutside={() => resetPopover()}
                           content={({ position, childRect, popoverRect }) => (
@@ -1251,11 +935,7 @@ export default function Main({ user }) {
                               <div className="rounded-md bg-white p-2">
                                 <form
                                   onSubmit={(e) =>
-                                    handleExpenseEditSubmit(
-                                      e,
-                                      el.categoryName,
-                                      expenseObject.expense
-                                    )
+                                    handleInflowEditSubmit(e, inflow.inflowName)
                                   }
                                 >
                                   <input
@@ -1264,9 +944,9 @@ export default function Main({ user }) {
                                     autoComplete="off"
                                     maxLength="64"
                                     type="text"
-                                    placeholder="New name for this expense"
-                                    value={userInputValue}
+                                    placeholder="New name for this category"
                                     ref={inputElement}
+                                    value={userInputValue}
                                     onChange={(e) => handleInputChange(e)}
                                   />
                                   {popoverError && (
@@ -1278,11 +958,7 @@ export default function Main({ user }) {
                                     <button
                                       type="button"
                                       onClick={(e) =>
-                                        deleteExpense(
-                                          e,
-                                          el.categoryName,
-                                          expenseObject.expense
-                                        )
+                                        deleteInflow(e, inflow.inflowName)
                                       }
                                       className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                                     >
@@ -1311,79 +987,449 @@ export default function Main({ user }) {
                         >
                           <div
                             className="pl-2 flex hover:text-gray-600"
-                            // ta CN je meu tud justify-between, why?
-                            id="expense-name"
                             onClick={() =>
-                              openPopover === 'expense_' + expenseObject.expense
+                              openPopover === 'inflow_' + inflow.inflowName
                                 ? resetPopover()
-                                : prepareEdit('expense_', expenseObject.expense)
+                                : prepareEdit('inflow_', inflow.inflowName)
                             }
                           >
-                            {expenseObject.expense}
+                            {inflow.inflowName}
                           </div>
                         </Popover>
-                        {/* editing an expenes - end */}
+                        {/* edit an inflow popover - end  */}
                       </div>
-                      <div className="px-1 flex">
-                        <form
-                          onSubmit={(e) =>
-                            handleAmountSubmit(
-                              e,
-                              el.categoryName,
-                              expenseObject
-                            )
+                    </div>
+
+                    <div className="px-1 flex">
+                      <form
+                        onSubmit={(e) => handleInflowAmountSubmit(e, inflow)}
+                      >
+                        <input
+                          className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                          id="inflow-amount"
+                          key={inflow.inflowName}
+                          type="text"
+                          onClick={() =>
+                            prepareAmountEdit(inflow.inflowName, inflow.amount)
                           }
-                        >
-                          <input
-                            className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
-                            id="amount"
-                            key={expenseObject.expense}
-                            type="text"
-                            onClick={() =>
-                              prepareAmountEdit(
-                                expenseObject.expense,
-                                expenseObject.amount
-                              )
+                          onChange={(e) => handleAmountChange(e)}
+                          onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
+                          spellCheck="false"
+                          autoComplete="false"
+                          value={
+                            openPopover === inflow.inflowName
+                              ? userAmountValue
+                              : inflow.amount.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })
+                          }
+                        />
+                      </form>
+                      {currency}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="pl-2 text-sm italic text-gray-700">
+                  No inflows.
+                </div>
+              )}
+            </div>
+          </div>
+          <div id="all-expenses-wrapper" className="">
+            <div id="little-wrapper" className="flex space-x-1 items-end">
+              <p className="text-xl font-bold underline">Expenses</p>
+              {/* adding a category popover - start */}
+              <Popover
+                isOpen={openPopover === 'addCategory'}
+                positions={['bottom', 'right']}
+                onClickOutside={() => resetPopover()}
+                content={({ position, childRect, popoverRect }) => (
+                  <ArrowContainer
+                    position={position}
+                    childRect={childRect}
+                    popoverRect={popoverRect}
+                    arrowColor={'white'}
+                    arrowSize={10}
+                    arrowStyle={{ opacity: 0.7 }}
+                  >
+                    <div className="rounded-md bg-white p-2">
+                      <form onSubmit={(e) => handleCategorySubmit(e)}>
+                        <input
+                          className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                          spellCheck="false"
+                          autoComplete="off"
+                          placeholder="New Category"
+                          maxLength="64"
+                          type="text"
+                          ref={inputElement}
+                          value={userInputValue}
+                          onChange={(e) => handleInputChange(e)}
+                        />
+                        {popoverError && (
+                          <div className="text-sm text-red-500">
+                            {popoverError}
+                          </div>
+                        )}
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => resetPopover()}
+                            className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </ArrowContainer>
+                )}
+              >
+                <button
+                  className="focus:outline-white inline-block px-1 border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-md cursor-pointer text-sm"
+                  onClick={() =>
+                    openPopover === 'addCategory'
+                      ? setOpenPopover(false)
+                      : setOpenPopover('addCategory')
+                  }
+                >
+                  + Category
+                </button>
+              </Popover>
+              {/* adding a category popover - end */}
+            </div>
+            <div>
+              {budgetData.expenses.map((el) => (
+                <div className="p-2" key={el.categoryName}>
+                  {/* editing a category popover - start */}
+                  <Popover
+                    isOpen={openPopover === 'category_' + el.categoryName}
+                    positions={['bottom', 'top']}
+                    onClickOutside={() => resetPopover()}
+                    content={({ position, childRect, popoverRect }) => (
+                      <ArrowContainer
+                        position={position}
+                        childRect={childRect}
+                        popoverRect={popoverRect}
+                        arrowColor={'white'}
+                        arrowSize={10}
+                        arrowStyle={{ opacity: 0.7 }}
+                      >
+                        <div className="rounded-md bg-white p-2">
+                          <form
+                            onSubmit={(e) =>
+                              handleCategoryEditSubmit(e, el.categoryName)
                             }
-                            onChange={(e) => handleAmountChange(e)}
-                            onBlur={(e) =>
+                          >
+                            <input
+                              className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                              spellCheck="false"
+                              autoComplete="off"
+                              maxLength="64"
+                              type="text"
+                              placeholder="New name for this category"
+                              ref={inputElement}
+                              value={userInputValue}
+                              onChange={(e) => handleInputChange(e)}
+                            />
+                            {popoverError && (
+                              <div className="text-sm text-red-500">
+                                {popoverError}
+                              </div>
+                            )}
+                            <div className="pt-2 flex justify-between">
+                              <button
+                                type="button"
+                                onClick={(e) =>
+                                  deleteCategory(e, el.categoryName)
+                                }
+                                className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                              >
+                                Delete
+                              </button>
+                              <div className="flex">
+                                <button
+                                  type="button"
+                                  onClick={() => resetPopover()}
+                                  className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                >
+                                  OK
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </ArrowContainer>
+                    )}
+                  >
+                    <div
+                      className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
+                      onClick={() =>
+                        openPopover === 'category_' + el.categoryName
+                          ? resetPopover()
+                          : prepareEdit('category_', el.categoryName)
+                      }
+                    >
+                      {el.categoryName}
+                    </div>
+                  </Popover>
+                  {/* editing a category popover - start */}
+                  {/* adding an expense popover - start */}
+                  <Popover
+                    isOpen={openPopover === 'addExpense_' + el.categoryName}
+                    positions={['right']}
+                    onClickOutside={() => resetPopover()}
+                    content={({ position, childRect, popoverRect }) => (
+                      <ArrowContainer
+                        position={position}
+                        childRect={childRect}
+                        popoverRect={popoverRect}
+                        arrowColor={'white'}
+                        arrowSize={10}
+                        arrowStyle={{ opacity: 0.7 }}
+                      >
+                        <div className="rounded-md bg-white p-2">
+                          <form
+                            onSubmit={(e) =>
+                              handleExpenseSubmit(e, el.categoryName)
+                            }
+                          >
+                            <input
+                              className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                              spellCheck="false"
+                              autoComplete="off"
+                              placeholder="New Expense"
+                              maxLength="64"
+                              type="text"
+                              ref={inputElement}
+                              value={userInputValue}
+                              onChange={(e) => handleInputChange(e)}
+                            />
+                            {popoverError && (
+                              <div className="text-sm text-red-500">
+                                {popoverError}
+                              </div>
+                            )}
+                            <div className="pt-2 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => resetPopover()}
+                                className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                              >
+                                OK
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </ArrowContainer>
+                    )}
+                  >
+                    <div className="inline-block">
+                      <button
+                        className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
+                        onClick={() =>
+                          openPopover === 'addExpense_' + el.categoryName
+                            ? resetPopover()
+                            : setOpenPopover('addExpense_' + el.categoryName)
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                  </Popover>
+                  {/* adding an expense popover - end */}
+                  {el.expensesInCategory.length ? (
+                    el.expensesInCategory.map((expenseObject) => (
+                      <div
+                        // border before hover is the same color as background
+                        className="border-b-2 border-gray-100 hover:border-gray-400 pl-2 flex justify-between"
+                        id="expense-line"
+                        key={expenseObject.expense}
+                      >
+                        <div className="cursor-pointer">
+                          {/* editing an expense - start */}
+                          <Popover
+                            isOpen={
+                              openPopover === 'expense_' + expenseObject.expense
+                            }
+                            positions={['bottom', 'top']}
+                            onClickOutside={() => resetPopover()}
+                            content={({ position, childRect, popoverRect }) => (
+                              <ArrowContainer
+                                position={position}
+                                childRect={childRect}
+                                popoverRect={popoverRect}
+                                arrowColor={'white'}
+                                arrowSize={10}
+                                arrowStyle={{ opacity: 0.7 }}
+                              >
+                                <div className="rounded-md bg-white p-2">
+                                  <form
+                                    onSubmit={(e) =>
+                                      handleExpenseEditSubmit(
+                                        e,
+                                        el.categoryName,
+                                        expenseObject.expense
+                                      )
+                                    }
+                                  >
+                                    <input
+                                      className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                      spellCheck="false"
+                                      autoComplete="off"
+                                      maxLength="64"
+                                      type="text"
+                                      placeholder="New name for this expense"
+                                      value={userInputValue}
+                                      ref={inputElement}
+                                      onChange={(e) => handleInputChange(e)}
+                                    />
+                                    {popoverError && (
+                                      <div className="text-sm text-red-500">
+                                        {popoverError}
+                                      </div>
+                                    )}
+                                    <div className="pt-2 flex justify-between">
+                                      <button
+                                        type="button"
+                                        onClick={(e) =>
+                                          deleteExpense(
+                                            e,
+                                            el.categoryName,
+                                            expenseObject.expense
+                                          )
+                                        }
+                                        className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                      >
+                                        Delete
+                                      </button>
+                                      <div className="flex">
+                                        <button
+                                          type="button"
+                                          onClick={() => resetPopover()}
+                                          className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button
+                                          type="submit"
+                                          className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                        >
+                                          OK
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </form>
+                                </div>
+                              </ArrowContainer>
+                            )}
+                          >
+                            <div
+                              className="pl-2 flex hover:text-gray-600"
+                              // ta CN je meu tud justify-between, why?
+                              id="expense-name"
+                              onClick={() =>
+                                openPopover ===
+                                'expense_' + expenseObject.expense
+                                  ? resetPopover()
+                                  : prepareEdit(
+                                      'expense_',
+                                      expenseObject.expense
+                                    )
+                              }
+                            >
+                              {expenseObject.expense}
+                            </div>
+                          </Popover>
+                          {/* editing an expense - end */}
+                        </div>
+                        <div className="px-1 flex">
+                          <form
+                            onSubmit={(e) =>
                               handleAmountSubmit(
                                 e,
                                 el.categoryName,
                                 expenseObject
                               )
                             }
-                            spellCheck="false"
-                            autoComplete="off"
-                            value={
-                              openPopover === expenseObject.expense
-                                ? userAmountValue
-                                : expenseObject.amount.toLocaleString(
-                                    undefined,
-                                    {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    }
-                                  )
-                            }
-                          />
-                        </form>
-                        {currency}
+                          >
+                            <input
+                              className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                              id="amount"
+                              key={expenseObject.expense}
+                              type="text"
+                              onClick={() =>
+                                prepareAmountEdit(
+                                  expenseObject.expense,
+                                  expenseObject.amount
+                                )
+                              }
+                              onChange={(e) => handleAmountChange(e)}
+                              onBlur={(e) =>
+                                handleAmountSubmit(
+                                  e,
+                                  el.categoryName,
+                                  expenseObject
+                                )
+                              }
+                              spellCheck="false"
+                              autoComplete="off"
+                              value={
+                                openPopover === expenseObject.expense
+                                  ? userAmountValue
+                                  : expenseObject.amount.toLocaleString(
+                                      undefined,
+                                      {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      }
+                                    )
+                              }
+                            />
+                          </form>
+                          {currency}
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div>
+                      <p className="pl-2 text-sm italic text-gray-700">
+                        No expenses in this category.
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <div>
-                    <p className="pl-2 text-sm italic text-gray-700">
-                      No expenses in this category.
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+        {/* left side of the core end */}
+        {/* right side of the core start */}
+        <div className="w-1/2 m-2">
+          <Charts expenses={budgetData.expenses} />
+        </div>
+        {/* right side of the core end */}
       </div>
+      {/* core end */}
     </div>
   );
 }
