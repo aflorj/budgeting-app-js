@@ -182,10 +182,17 @@ export default function Main({ user }) {
       .catch((error) => {
         console.log('Error getting the requested month document:', error);
       });
-
-    // render newly fetched data
-    setLoading(false);
   }
+
+  // useEffect disabling the loading component when the state of the budgetData equals to the newly fetched data
+  const firstTime = useRef(true);
+  useEffect(() => {
+    if (firstTime.current) {
+      firstTime.current = false;
+      return;
+    }
+    setLoading(false);
+  }, [budgetData]);
 
   // closes the popover and resets the input value and the error value
   function resetPopover() {
