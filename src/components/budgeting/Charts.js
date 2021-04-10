@@ -51,7 +51,9 @@ export default function Charts({ expenses }) {
     </div>
   ) : (
     <div className="flex justify-center pt-8">
-      <p>You must enter at least two expenses to display the chart.</p>
+      <p className="italic text-sm text-gray-700">
+        You must enter at least two expenses to display the chart.
+      </p>
     </div>
   );
 }

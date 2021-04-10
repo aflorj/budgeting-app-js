@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { db } from '../../firebase';
 import Loading from './Loading';
 import Charts from './Charts';
@@ -20,6 +20,12 @@ export default function Main({ user }) {
 
   // all budgeting data
   const [budgetData, setBudgetData] = useState({});
+
+  // month/year of the currently displayed budget
+  const [displayedBudget, setDisplayedBudget] = useState({
+    year: currentYear,
+    month: currentMonth,
+  });
 
   // popover state shared between all popovers
   // false or the name of the currently open popover
@@ -49,9 +55,9 @@ export default function Main({ user }) {
   const docRefRecurringData = dbRefUser
     .collection('recurringData')
     .doc('recurringData');
-  const docRefCurrentMonth = dbRefUser
+  const docRefCurrentMonth = dbRefUser // TODO var name - not really 'current' anymore
     .collection('budgetsByMonth')
-    .doc(`${currentYear}_${currentMonth}`);
+    .doc(displayedBudget.year + '_' + displayedBudget.month);
 
   // the user logs in and main.js is rendered
   useEffect(() => {
@@ -101,7 +107,6 @@ export default function Main({ user }) {
           // this is a new user
           // set local state to the blank budget(?) and default categories
           setBudgetData({
-            budget: 0,
             expenses: DEFAULT_CATEGORIES,
             inflows: [],
           });
@@ -116,7 +121,6 @@ export default function Main({ user }) {
 
           // Blank budget
           docRefCurrentMonth.set({
-            budget: 0, // TODO remove when calculating budget is working
             expenses: DEFAULT_CATEGORIES,
             inflows: [], // TODO
           });
@@ -124,6 +128,7 @@ export default function Main({ user }) {
           // Set user's categories to the default categories
           docRefRecurringData.set({
             expenses: DEFAULT_CATEGORIES,
+            inflows: [],
           });
         }
       })
@@ -131,6 +136,56 @@ export default function Main({ user }) {
         console.log('Error getting the user document:', error);
       });
   }, []);
+
+  // fetching requested document when user changes the budgeting period
+  // useRef keeping track of the initial render to prevent useEffect firing and re-fetching
+  const isInitialRender = useRef(true);
+
+  // use effect fetching new data on any change to displayedBudget, except for the initial render
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    fetchNewData();
+  }, [displayedBudget]);
+
+  function fetchNewData() {
+    docRefCurrentMonth
+      .get()
+      .then((doc) => {
+        if (doc.exists) {
+          console.log('doc exists');
+          // user is switching to a budget that exists
+
+          // set local state with the data from the fetch month document
+          setBudgetData(doc.data());
+        } else {
+          console.log('doc doesnt exist');
+          // user is creating a new budget document for the month
+
+          // create a new document for that month, based on the user's recurring document
+          docRefRecurringData
+            .get()
+            .then((doc) => {
+              // local budget state set to the user's recurring doc data
+              setBudgetData(doc.data());
+
+              // set the user's current month doc the the user's recurring doc data
+              docRefCurrentMonth.set(doc.data());
+            })
+            .catch((error) => {
+              console.log('Error getting the recurring document:', error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.log('Error getting the requested month document:', error);
+      });
+
+    // render newly fetched data
+    setLoading(false);
+  }
 
   // closes the popover and resets the input value and the error value
   function resetPopover() {
@@ -792,6 +847,45 @@ export default function Main({ user }) {
     return tbb - calculateAlreadyBudgeted();
   }
 
+  function changeMonth(direction) {
+    // loading component while the new doc is being fetched
+    setLoading(true);
+
+    // next month
+    if (direction === 'next') {
+      // December
+      if (displayedBudget.month === 11) {
+        setDisplayedBudget({
+          year: displayedBudget.year + 1,
+          month: 0,
+        });
+      } else {
+        // any other month
+        setDisplayedBudget({
+          year: displayedBudget.year,
+          month: displayedBudget.month + 1,
+        });
+      }
+    }
+
+    // previous month
+    if (direction === 'previous') {
+      // Januar
+      if (displayedBudget.month === 0) {
+        setDisplayedBudget({
+          year: displayedBudget.year - 1,
+          month: 11,
+        });
+      } else {
+        // any other month
+        setDisplayedBudget({
+          year: displayedBudget.year,
+          month: displayedBudget.month - 1,
+        });
+      }
+    }
+  }
+
   return loading ? (
     <Loading />
   ) : (
@@ -800,8 +894,12 @@ export default function Main({ user }) {
       <div className="bg-gray-200 flex flex-initial flex-row items-center">
         <div className="flex-col ml-20">
           <div>Your budget for</div>
-          <div className="font-bold text-xl">
-            {MONTHS[currentMonth]} {currentYear}
+          <div className="font-bold text-xl flex justify-center">
+            <button onClick={() => changeMonth('previous')}>{'<<'}</button>
+            <p>
+              {MONTHS[displayedBudget.month]} {displayedBudget.year}
+            </p>
+            <button onClick={() => changeMonth('next')}>{'>>'}</button>
           </div>
         </div>
         <div className="font-extrabold text-white p-5 ml-40 bg-green-400 rounded-md">
@@ -820,11 +918,15 @@ export default function Main({ user }) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
-            € Funds for {MONTHS[currentMonth]}
+            {currency} Funds for {MONTHS[displayedBudget.month]}
           </p>
           <p>
             -0.00€ Overspent in{' '}
-            {MONTHS[currentMonth === 0 ? 11 : currentMonth - 1]}
+            {
+              MONTHS[
+                displayedBudget.month === 0 ? 11 : displayedBudget.month - 1
+              ]
+            }
           </p>
           <p>
             -
@@ -832,7 +934,7 @@ export default function Main({ user }) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
-            € Budgeted in {MONTHS[currentMonth]}
+            {currency} Budgeted in {MONTHS[displayedBudget.month]}
           </p>
           <p>-0.00€ Budgeted in Future</p>
         </div>
