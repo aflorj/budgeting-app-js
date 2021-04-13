@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pie } from 'react-chartjs-2';
+import { ChartPieIcon } from '@heroicons/react/outline';
 
 // TODO pie chart colors
 
@@ -50,8 +51,9 @@ export default function Charts({ expenses }) {
       <Pie data={pieData} legend={{ position: 'bottom' }} />
     </div>
   ) : (
-    <div className="flex justify-center pt-8">
-      <p className="italic text-sm text-gray-700">
+    <div className="flex justify-center items-end pt-8">
+      <ChartPieIcon className="w-6 h-6" />
+      <p className="italic text-gray-700">
         You must enter at least two expenses to display the chart.
       </p>
     </div>

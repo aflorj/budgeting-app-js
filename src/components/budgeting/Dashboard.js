@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHistory } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Header from './Header';
 import Main from './Main';
 
 export default function Dashboard() {
@@ -13,8 +13,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex">
-      <Sidebar user={currentUser} logout={handleLogout} />
+    <div className="flex flex-col bg-gray-200 min-h-screen">
+      <Header user={currentUser} logout={handleLogout} />
       <Main user={currentUser} />
     </div>
   );

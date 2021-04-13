@@ -1,13 +1,14 @@
-import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { db } from '../../firebase';
 import Loading from './Loading';
 import Charts from './Charts';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
 import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
+import { ChevronRightIcon, ChevronLeftIcon } from '@heroicons/react/outline';
 
 // TODO dealing with recurring expenses
-// useEffect with budgetState updating the db?
+// IDEA useEffect with budgetState updating the db?
 
 const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
@@ -66,21 +67,22 @@ export default function Main({ user }) {
       .get()
       .then((doc) => {
         if (doc.exists) {
-          // this is not a new user
+          // EXISTING USER
 
           // check if this is the user's first login this month
           docRefCurrentMonth
             .get()
             .then((doc) => {
               if (doc.exists) {
-                // this is not the user's first login this month
+                // NORMAL LOGIN
 
                 // set local state with the data from the user's current month document
                 setBudgetData(doc.data());
+
                 // render
                 setLoading(false);
               } else {
-                // this is the user's first login this month
+                // FIRST LOGIN THIS MONTH
 
                 // create a new document for this month, based on the user's recurring data
                 docRefRecurringData
@@ -104,7 +106,8 @@ export default function Main({ user }) {
               console.log('Error getting the current month document:', error);
             });
         } else {
-          // this is a new user
+          // NEW USER
+
           // set local state to the blank budget(?) and default categories
           setBudgetData({
             expenses: DEFAULT_CATEGORIES,
@@ -893,21 +896,45 @@ export default function Main({ user }) {
     }
   }
 
+  // only display the 'next month' arrow for one month ahead
+  function conditionNext() {
+    if (displayedBudget.year < currentYear) {
+      return true;
+    } else if (displayedBudget.month <= currentMonth) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   return loading ? (
     <Loading />
   ) : (
-    <div className="bg-gray-100 w-full p-2 flex flex-col h-screen">
+    <div className="bg-gray-100 p-2 flex flex-col mt-4 mb-8 mx-8 rounded-lg shadow-lg min-h-full">
       {/* head start */}
-      <div className="bg-gray-200 flex flex-initial flex-row items-center">
-        <div className="flex-col ml-20">
-          <div>Your budget for</div>
-          <div className="font-bold text-xl flex justify-center">
-            <button onClick={() => changeMonth('previous')}>{'<<'}</button>
-            <p>
-              {MONTHS[displayedBudget.month]} {displayedBudget.year}
-            </p>
-            <button onClick={() => changeMonth('next')}>{'>>'}</button>
+      <div className="bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
+        <div className="ml-20 flex items-center">
+          {true && (
+            // TODO replace 'true' with a function that checks for previous budgets from this user
+            <ChevronLeftIcon
+              className="h-8 w-8 cursor-pointer transform transition hover:scale-125 opacity-50 hover:opacity-100"
+              onClick={() => changeMonth('previous')}
+            />
+          )}
+          <div className="flex-col">
+            <div>Your budget for</div>
+            <div className="flex justify-center">
+              <p className="font-bold text-xl">
+                {MONTHS[displayedBudget.month]} {displayedBudget.year}
+              </p>
+            </div>
           </div>
+          {conditionNext() && (
+            <ChevronRightIcon
+              className="h-8 w-8 cursor-pointer transform transition hover:scale-125 opacity-50 hover:opacity-100"
+              onClick={() => changeMonth('next')}
+            />
+          )}
         </div>
         <div className="font-extrabold text-white p-5 ml-40 bg-green-400 rounded-md">
           {calculateToBeBudgeted().toLocaleString(undefined, {
@@ -1140,9 +1167,7 @@ export default function Main({ user }) {
                   </div>
                 ))
               ) : (
-                <div className="pl-2 text-sm italic text-gray-700">
-                  No inflows.
-                </div>
+                <div className="pl-2 italic text-gray-700">No inflows.</div>
               )}
             </div>
           </div>
@@ -1215,55 +1240,125 @@ export default function Main({ user }) {
               {/* adding a category popover - end */}
             </div>
             <div>
-              {budgetData.expenses.map((el) => (
-                <div className="p-2" key={el.categoryName}>
-                  {/* editing a category popover - start */}
-                  <Popover
-                    isOpen={openPopover === 'category_' + el.categoryName}
-                    positions={['bottom', 'top']}
-                    onClickOutside={() => resetPopover()}
-                    content={({ position, childRect, popoverRect }) => (
-                      <ArrowContainer
-                        position={position}
-                        childRect={childRect}
-                        popoverRect={popoverRect}
-                        arrowColor={'white'}
-                        arrowSize={10}
-                        arrowStyle={{ opacity: 0.7 }}
-                      >
-                        <div className="rounded-md bg-white p-2">
-                          <form
-                            onSubmit={(e) =>
-                              handleCategoryEditSubmit(e, el.categoryName)
-                            }
-                          >
-                            <input
-                              className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                              spellCheck="false"
-                              autoComplete="off"
-                              maxLength="64"
-                              type="text"
-                              placeholder="New name for this category"
-                              ref={inputElement}
-                              value={userInputValue}
-                              onChange={(e) => handleInputChange(e)}
-                            />
-                            {popoverError && (
-                              <div className="text-sm text-red-500">
-                                {popoverError}
+              {budgetData.expenses.length ? (
+                budgetData.expenses.map((el) => (
+                  <div className="p-2" key={el.categoryName}>
+                    {/* editing a category popover - start */}
+                    <Popover
+                      isOpen={openPopover === 'category_' + el.categoryName}
+                      positions={['bottom', 'top']}
+                      onClickOutside={() => resetPopover()}
+                      content={({ position, childRect, popoverRect }) => (
+                        <ArrowContainer
+                          position={position}
+                          childRect={childRect}
+                          popoverRect={popoverRect}
+                          arrowColor={'white'}
+                          arrowSize={10}
+                          arrowStyle={{ opacity: 0.7 }}
+                        >
+                          <div className="rounded-md bg-white p-2">
+                            <form
+                              onSubmit={(e) =>
+                                handleCategoryEditSubmit(e, el.categoryName)
+                              }
+                            >
+                              <input
+                                className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                spellCheck="false"
+                                autoComplete="off"
+                                maxLength="64"
+                                type="text"
+                                placeholder="New name for this category"
+                                ref={inputElement}
+                                value={userInputValue}
+                                onChange={(e) => handleInputChange(e)}
+                              />
+                              {popoverError && (
+                                <div className="text-sm text-red-500">
+                                  {popoverError}
+                                </div>
+                              )}
+                              <div className="pt-2 flex justify-between">
+                                <button
+                                  type="button"
+                                  onClick={(e) =>
+                                    deleteCategory(e, el.categoryName)
+                                  }
+                                  className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                >
+                                  Delete
+                                </button>
+                                <div className="flex">
+                                  <button
+                                    type="button"
+                                    onClick={() => resetPopover()}
+                                    className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                  >
+                                    OK
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                            <div className="pt-2 flex justify-between">
-                              <button
-                                type="button"
-                                onClick={(e) =>
-                                  deleteCategory(e, el.categoryName)
-                                }
-                                className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                              >
-                                Delete
-                              </button>
-                              <div className="flex">
+                            </form>
+                          </div>
+                        </ArrowContainer>
+                      )}
+                    >
+                      <div
+                        className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
+                        onClick={() =>
+                          openPopover === 'category_' + el.categoryName
+                            ? resetPopover()
+                            : prepareEdit('category_', el.categoryName)
+                        }
+                      >
+                        {el.categoryName}
+                      </div>
+                    </Popover>
+                    {/* editing a category popover - start */}
+                    {/* adding an expense popover - start */}
+                    <Popover
+                      isOpen={openPopover === 'addExpense_' + el.categoryName}
+                      positions={['right']}
+                      onClickOutside={() => resetPopover()}
+                      content={({ position, childRect, popoverRect }) => (
+                        <ArrowContainer
+                          position={position}
+                          childRect={childRect}
+                          popoverRect={popoverRect}
+                          arrowColor={'white'}
+                          arrowSize={10}
+                          arrowStyle={{ opacity: 0.7 }}
+                        >
+                          <div className="rounded-md bg-white p-2">
+                            <form
+                              onSubmit={(e) =>
+                                handleExpenseSubmit(e, el.categoryName)
+                              }
+                            >
+                              <input
+                                className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                spellCheck="false"
+                                autoComplete="off"
+                                placeholder="New Expense"
+                                maxLength="64"
+                                type="text"
+                                ref={inputElement}
+                                value={userInputValue}
+                                onChange={(e) => handleInputChange(e)}
+                              />
+                              {popoverError && (
+                                <div className="text-sm text-red-500">
+                                  {popoverError}
+                                </div>
+                              )}
+                              <div className="pt-2 flex justify-end">
                                 <button
                                   type="button"
                                   onClick={() => resetPopover()}
@@ -1278,256 +1373,199 @@ export default function Main({ user }) {
                                   OK
                                 </button>
                               </div>
-                            </div>
-                          </form>
-                        </div>
-                      </ArrowContainer>
-                    )}
-                  >
-                    <div
-                      className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
-                      onClick={() =>
-                        openPopover === 'category_' + el.categoryName
-                          ? resetPopover()
-                          : prepareEdit('category_', el.categoryName)
-                      }
+                            </form>
+                          </div>
+                        </ArrowContainer>
+                      )}
                     >
-                      {el.categoryName}
-                    </div>
-                  </Popover>
-                  {/* editing a category popover - start */}
-                  {/* adding an expense popover - start */}
-                  <Popover
-                    isOpen={openPopover === 'addExpense_' + el.categoryName}
-                    positions={['right']}
-                    onClickOutside={() => resetPopover()}
-                    content={({ position, childRect, popoverRect }) => (
-                      <ArrowContainer
-                        position={position}
-                        childRect={childRect}
-                        popoverRect={popoverRect}
-                        arrowColor={'white'}
-                        arrowSize={10}
-                        arrowStyle={{ opacity: 0.7 }}
-                      >
-                        <div className="rounded-md bg-white p-2">
-                          <form
-                            onSubmit={(e) =>
-                              handleExpenseSubmit(e, el.categoryName)
-                            }
-                          >
-                            <input
-                              className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                              spellCheck="false"
-                              autoComplete="off"
-                              placeholder="New Expense"
-                              maxLength="64"
-                              type="text"
-                              ref={inputElement}
-                              value={userInputValue}
-                              onChange={(e) => handleInputChange(e)}
-                            />
-                            {popoverError && (
-                              <div className="text-sm text-red-500">
-                                {popoverError}
-                              </div>
-                            )}
-                            <div className="pt-2 flex justify-end">
-                              <button
-                                type="button"
-                                onClick={() => resetPopover()}
-                                className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                              >
-                                OK
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      </ArrowContainer>
-                    )}
-                  >
-                    <div className="inline-block">
-                      <button
-                        className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
-                        onClick={() =>
-                          openPopover === 'addExpense_' + el.categoryName
-                            ? resetPopover()
-                            : setOpenPopover('addExpense_' + el.categoryName)
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-                  </Popover>
-                  {/* adding an expense popover - end */}
-                  {el.expensesInCategory.length ? (
-                    el.expensesInCategory.map((expenseObject) => (
-                      <div
-                        // border before hover is the same color as background
-                        className="border-b-2 border-gray-100 hover:border-gray-400 pl-2 flex justify-between"
-                        id="expense-line"
-                        key={expenseObject.expense}
-                      >
-                        <div className="cursor-pointer">
-                          {/* editing an expense - start */}
-                          <Popover
-                            isOpen={
-                              openPopover === 'expense_' + expenseObject.expense
-                            }
-                            positions={['bottom', 'top']}
-                            onClickOutside={() => resetPopover()}
-                            content={({ position, childRect, popoverRect }) => (
-                              <ArrowContainer
-                                position={position}
-                                childRect={childRect}
-                                popoverRect={popoverRect}
-                                arrowColor={'white'}
-                                arrowSize={10}
-                                arrowStyle={{ opacity: 0.7 }}
-                              >
-                                <div className="rounded-md bg-white p-2">
-                                  <form
-                                    onSubmit={(e) =>
-                                      handleExpenseEditSubmit(
-                                        e,
-                                        el.categoryName,
-                                        expenseObject.expense
-                                      )
-                                    }
-                                  >
-                                    <input
-                                      className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                                      spellCheck="false"
-                                      autoComplete="off"
-                                      maxLength="64"
-                                      type="text"
-                                      placeholder="New name for this expense"
-                                      value={userInputValue}
-                                      ref={inputElement}
-                                      onChange={(e) => handleInputChange(e)}
-                                    />
-                                    {popoverError && (
-                                      <div className="text-sm text-red-500">
-                                        {popoverError}
-                                      </div>
-                                    )}
-                                    <div className="pt-2 flex justify-between">
-                                      <button
-                                        type="button"
-                                        onClick={(e) =>
-                                          deleteExpense(
-                                            e,
-                                            el.categoryName,
-                                            expenseObject.expense
-                                          )
-                                        }
-                                        className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                      >
-                                        Delete
-                                      </button>
-                                      <div className="flex">
-                                        <button
-                                          type="button"
-                                          onClick={() => resetPopover()}
-                                          className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                        >
-                                          Cancel
-                                        </button>
-                                        <button
-                                          type="submit"
-                                          className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                                        >
-                                          OK
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </form>
-                                </div>
-                              </ArrowContainer>
-                            )}
-                          >
-                            <div
-                              className="pl-2 flex hover:text-gray-600"
-                              // ta CN je meu tud justify-between, why?
-                              id="expense-name"
-                              onClick={() =>
+                      <div className="inline-block">
+                        <button
+                          className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
+                          onClick={() =>
+                            openPopover === 'addExpense_' + el.categoryName
+                              ? resetPopover()
+                              : setOpenPopover('addExpense_' + el.categoryName)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                    </Popover>
+                    {/* adding an expense popover - end */}
+                    {el.expensesInCategory.length ? (
+                      el.expensesInCategory.map((expenseObject) => (
+                        <div
+                          // border before hover is the same color as background
+                          className="border-b-2 border-gray-100 hover:border-gray-400 pl-2 flex justify-between"
+                          id="expense-line"
+                          key={expenseObject.expense}
+                        >
+                          <div className="cursor-pointer">
+                            {/* editing an expense - start */}
+                            <Popover
+                              isOpen={
                                 openPopover ===
                                 'expense_' + expenseObject.expense
-                                  ? resetPopover()
-                                  : prepareEdit(
-                                      'expense_',
-                                      expenseObject.expense
-                                    )
                               }
+                              positions={['bottom', 'top']}
+                              onClickOutside={() => resetPopover()}
+                              content={({
+                                position,
+                                childRect,
+                                popoverRect,
+                              }) => (
+                                <ArrowContainer
+                                  position={position}
+                                  childRect={childRect}
+                                  popoverRect={popoverRect}
+                                  arrowColor={'white'}
+                                  arrowSize={10}
+                                  arrowStyle={{ opacity: 0.7 }}
+                                >
+                                  <div className="rounded-md bg-white p-2">
+                                    <form
+                                      onSubmit={(e) =>
+                                        handleExpenseEditSubmit(
+                                          e,
+                                          el.categoryName,
+                                          expenseObject.expense
+                                        )
+                                      }
+                                    >
+                                      <input
+                                        className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                        spellCheck="false"
+                                        autoComplete="off"
+                                        maxLength="64"
+                                        type="text"
+                                        placeholder="New name for this expense"
+                                        value={userInputValue}
+                                        ref={inputElement}
+                                        onChange={(e) => handleInputChange(e)}
+                                      />
+                                      {popoverError && (
+                                        <div className="text-sm text-red-500">
+                                          {popoverError}
+                                        </div>
+                                      )}
+                                      <div className="pt-2 flex justify-between">
+                                        <button
+                                          type="button"
+                                          onClick={(e) =>
+                                            deleteExpense(
+                                              e,
+                                              el.categoryName,
+                                              expenseObject.expense
+                                            )
+                                          }
+                                          className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                        >
+                                          Delete
+                                        </button>
+                                        <div className="flex">
+                                          <button
+                                            type="button"
+                                            onClick={() => resetPopover()}
+                                            className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            type="submit"
+                                            className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                          >
+                                            OK
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </form>
+                                  </div>
+                                </ArrowContainer>
+                              )}
                             >
-                              {expenseObject.expense}
-                            </div>
-                          </Popover>
-                          {/* editing an expense - end */}
-                        </div>
-                        <div className="px-1 flex">
-                          <form
-                            onSubmit={(e) =>
-                              handleAmountSubmit(
-                                e,
-                                el.categoryName,
-                                expenseObject
-                              )
-                            }
-                          >
-                            <input
-                              className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
-                              id="amount"
-                              key={expenseObject.expense}
-                              type="text"
-                              onClick={() =>
-                                prepareAmountEdit(
-                                  expenseObject.expense,
-                                  expenseObject.amount
-                                )
-                              }
-                              onChange={(e) => handleAmountChange(e)}
-                              onBlur={(e) =>
+                              <div
+                                className="pl-2 flex hover:text-gray-600"
+                                // ta CN je meu tud justify-between, why?
+                                id="expense-name"
+                                onClick={() =>
+                                  openPopover ===
+                                  'expense_' + expenseObject.expense
+                                    ? resetPopover()
+                                    : prepareEdit(
+                                        'expense_',
+                                        expenseObject.expense
+                                      )
+                                }
+                              >
+                                {expenseObject.expense}
+                              </div>
+                            </Popover>
+                            {/* editing an expense - end */}
+                          </div>
+                          <div className="px-1 flex">
+                            <form
+                              onSubmit={(e) =>
                                 handleAmountSubmit(
                                   e,
                                   el.categoryName,
                                   expenseObject
                                 )
                               }
-                              spellCheck="false"
-                              autoComplete="off"
-                              value={
-                                openPopover === expenseObject.expense
-                                  ? userAmountValue
-                                  : expenseObject.amount.toLocaleString(
-                                      undefined,
-                                      {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      }
-                                    )
-                              }
-                            />
-                          </form>
-                          {currency}
+                            >
+                              <input
+                                className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                                id="amount"
+                                key={expenseObject.expense}
+                                type="text"
+                                onClick={() =>
+                                  prepareAmountEdit(
+                                    expenseObject.expense,
+                                    expenseObject.amount
+                                  )
+                                }
+                                onChange={(e) => handleAmountChange(e)}
+                                onBlur={(e) =>
+                                  handleAmountSubmit(
+                                    e,
+                                    el.categoryName,
+                                    expenseObject
+                                  )
+                                }
+                                spellCheck="false"
+                                autoComplete="off"
+                                value={
+                                  openPopover === expenseObject.expense
+                                    ? userAmountValue
+                                    : expenseObject.amount.toLocaleString(
+                                        undefined,
+                                        {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        }
+                                      )
+                                }
+                              />
+                            </form>
+                            {currency}
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div>
+                        <p className="pl-2 italic text-gray-700">
+                          No expenses in this category.
+                        </p>
                       </div>
-                    ))
-                  ) : (
-                    <div>
-                      <p className="pl-2 text-sm italic text-gray-700">
-                        No expenses in this category.
-                      </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div>
+                  <p className="p-2 italic text-gray-700">
+                    Start building your budget by creating a category.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
