@@ -5,11 +5,17 @@ import { ChartPieIcon } from '@heroicons/react/outline';
 // TODO pie chart colors
 
 export default function Charts({ expenses }) {
-  const [pieData, setPieData] = useState({});
-  const [drawPie, setDrawPie] = useState(false);
+  // chart 1: 'by expense'
+  const [pieDataExpenses, setPieDataExpenses] = useState({});
+  const [drawPieExpenses, setDrawPieExpenses] = useState(false);
 
-  // a function that rebuilds the data object on every expense change by the user
+  // chart 2: 'by category'
+  const [pieDataCategories, setPieDataCategories] = useState({});
+  const [drawPieCategories, setDrawPieCategories] = useState(false);
+
+  // a function that rebuilds the data objects on every expense change by the user
   function pieBuilder(expensesObject) {
+    // BY EXPENSE
     let expensesToDisplay = [];
     let amountsToDisplay = [];
 
@@ -23,7 +29,7 @@ export default function Charts({ expenses }) {
       });
     });
 
-    setPieData({
+    setPieDataExpenses({
       labels: expensesToDisplay,
       datasets: [
         {
@@ -34,11 +40,47 @@ export default function Charts({ expenses }) {
       ],
     });
 
-    // only display the piechart if there's at least two expenses to be displayed
+    // only display the expenses piechart if there's at least two expenses to be displayed
     if (expensesToDisplay.length > 1) {
-      setDrawPie(true);
+      setDrawPieExpenses(true);
     } else {
-      setDrawPie(false);
+      setDrawPieExpenses(false);
+    }
+
+    // BY CATEGORY
+    let categoriesToDisplay = [];
+    let categoryAmountsToDisplay = [];
+
+    // only display a category if it has any set expenses inside
+    expensesObject.forEach((category) => {
+      let totalInCategory = 0;
+      category.expensesInCategory.forEach((expenseInCategory) => {
+        if (expenseInCategory.amount > 0) {
+          totalInCategory += expenseInCategory.amount;
+        }
+      });
+      if (totalInCategory > 0) {
+        categoriesToDisplay.push(category.categoryName);
+        categoryAmountsToDisplay.push(totalInCategory);
+      }
+    });
+
+    setPieDataCategories({
+      labels: categoriesToDisplay,
+      datasets: [
+        {
+          data: categoryAmountsToDisplay,
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+          hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+        },
+      ],
+    });
+
+    // only display the categories piechart if there's at least two categories to be displayed
+    if (categoriesToDisplay.length > 1) {
+      setDrawPieCategories(true);
+    } else {
+      setDrawPieCategories(false);
     }
   }
 
@@ -46,16 +88,36 @@ export default function Charts({ expenses }) {
     pieBuilder(expenses);
   }, [expenses]);
 
-  return drawPie ? (
-    <div className="flex justify-center pt-8">
-      <Pie data={pieData} legend={{ position: 'bottom' }} />
-    </div>
-  ) : (
-    <div className="flex justify-center items-end pt-8">
-      <ChartPieIcon className="w-6 h-6" />
-      <p className="italic text-gray-700">
-        You must enter at least two expenses to display the chart.
-      </p>
-    </div>
+  return (
+    <>
+      {drawPieExpenses ? (
+        <div className="grid justify-items-center pt-8">
+          <div className="mb-2 text-sm">By expense</div>
+          <Pie data={pieDataExpenses} legend={{ position: 'bottom' }} />
+        </div>
+      ) : (
+        <div className="flex justify-center items-end pt-8">
+          <ChartPieIcon className="w-6 h-6" />
+          <p className="italic text-gray-600">
+            You must enter at least two expenses to display the
+            <span className="text-black"> expenses chart</span>.
+          </p>
+        </div>
+      )}
+      {drawPieCategories ? (
+        <div className="grid justify-items-center pt-8">
+          <div className="mb-2 text-sm">By category</div>
+          <Pie data={pieDataCategories} legend={{ position: 'bottom' }} />
+        </div>
+      ) : (
+        <div className="flex justify-center items-end pt-8">
+          <ChartPieIcon className="w-6 h-6" />
+          <p className="italic text-gray-600">
+            You must enter expenses in at least two categories to display the
+            <span className="text-black"> categories chart</span>.
+          </p>
+        </div>
+      )}
+    </>
   );
 }
