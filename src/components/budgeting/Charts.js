@@ -89,7 +89,7 @@ export default function Charts({ expenses }) {
   }, [expenses]);
 
   return (
-    <>
+    <div>
       {drawPieExpenses ? (
         <div className="grid justify-items-center pt-8">
           <div className="mb-2 text-sm">By expense</div>
@@ -118,6 +118,6 @@ export default function Charts({ expenses }) {
           </p>
         </div>
       )}
-    </>
+    </div>
   );
 }

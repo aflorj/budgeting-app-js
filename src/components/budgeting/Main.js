@@ -9,6 +9,7 @@ import { ChevronRightIcon, ChevronLeftIcon } from '@heroicons/react/outline';
 
 // TODO dealing with recurring expenses
 // IDEA useEffect with budgetState updating the db?
+// TODO refactor: create a function that adds toLocaleString + currenct
 
 const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
@@ -215,9 +216,9 @@ export default function Main({ user }) {
     setOpenPopover(type + '_' + element);
     if (amount === 0) {
       // this fix can be removed when/if input value is highlighted on click
-      setUserAmountValue(''); // was input not amount
+      setUserAmountValue('');
     } else {
-      setUserAmountValue(amount); // same
+      setUserAmountValue(amount);
     }
   }
 
@@ -257,6 +258,7 @@ export default function Main({ user }) {
             ...budgetData.expenses,
             {
               categoryName: userInput,
+              categoryGoalAmount: 0,
               expensesInCategory: [],
             },
           ],
@@ -780,7 +782,64 @@ export default function Main({ user }) {
     setOpenPopover(false);
   }
 
-  // exp TODOZDEJ a sheramo inpute
+  // changing the amount of a category goal
+  function handleCategoryGoalSubmit(e, category) {
+    e.preventDefault();
+
+    // the index of the category that the edited goal belongs to
+    const indexOfCategory = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category.categoryName
+    );
+
+    // clearing the input and submitting equals to setting the goal for that category to zero
+    if (userAmountValue.length === 0) {
+      let expensesArrayCopy = [...budgetData.expenses];
+      expensesArrayCopy[indexOfCategory].categoryGoalAmount = 0;
+
+      // remove the category goal in the local state
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        expenses: expensesArrayCopy,
+      }));
+
+      // remove the category goal in the db
+      docRefCurrentMonth.set(
+        {
+          expenses: budgetData.expenses,
+        },
+        { merge: true }
+      );
+    } else {
+      // the user has changed the amount of this category goal and did not leave the input field empty
+      // and the value of the input was a number
+      if (
+        category.categoryGoalAmount !== parseFloat(userAmountValue) &&
+        !isNaN(userAmountValue)
+      ) {
+        // apply the changes to the local state
+        // copy of the array of the expenses in the category the edited category belongs to
+        let expensesArrayCopy = [...budgetData.expenses];
+        expensesArrayCopy[indexOfCategory].categoryGoalAmount = parseFloat(
+          userAmountValue
+        );
+        setBudgetData((budgetData) => ({
+          ...budgetData,
+          expenses: expensesArrayCopy,
+        }));
+
+        //and db changes
+        docRefCurrentMonth.set(
+          {
+            expenses: budgetData.expenses,
+          },
+          { merge: true }
+        );
+        // TODO recurring
+      }
+    }
+
+    setOpenPopover(false);
+  }
 
   // changing the amount of an expense goal
   function handleExpenseGoalSubmit(e, category, expenseObject) {
@@ -924,6 +983,14 @@ export default function Main({ user }) {
   function calculateToBeBudgeted() {
     let tbb = 0 + calculateBudget();
     return tbb - calculateAlreadyBudgeted();
+  }
+
+  function calculateCategoryTotal(expenses) {
+    let categoryTotal = 0;
+    expenses.forEach((expense) => {
+      categoryTotal += expense.amount;
+    });
+    return categoryTotal;
   }
 
   function changeMonth(direction) {
@@ -1312,10 +1379,14 @@ export default function Main({ user }) {
               {/* adding a category popover - end */}
             </div>
             {/* TODO insert the legend here */}
-            <div>
+            <div id="all-expenses-wrapper">
               {budgetData.expenses.length ? (
                 budgetData.expenses.map((el) => (
-                  <div className="p-2" key={el.categoryName}>
+                  <div
+                    className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200"
+                    id="each-category-wrapped"
+                    key={el.categoryName}
+                  >
                     {/* editing a category popover - start */}
                     <Popover
                       isOpen={openPopover === 'category_' + el.categoryName}
@@ -1577,8 +1648,7 @@ export default function Main({ user }) {
                               </Popover>
                               {/* editing an expense - end */}
                             </div>
-                            {/* under construction - start */}
-                            <div className="px-1 flex">
+                            <div className="flex">
                               <form
                                 onSubmit={(e) =>
                                   handleAmountSubmit(
@@ -1649,7 +1719,6 @@ export default function Main({ user }) {
                                 key={expenseObject.expense}
                                 type="text"
                                 onClick={() =>
-                                  //addExpenseGoal(el.categoryName, expenseObject)
                                   prepareAmountEdit(
                                     'expenseGoalAmount',
                                     expenseObject.expense,
@@ -1684,9 +1753,7 @@ export default function Main({ user }) {
                             </form>
                             {expenseObject.goalAmount > 0 && currency}
                           </div>
-
                           {/* podvojen del - end */}
-                          {/* under construction - end */}
                         </div>
                       ))
                     ) : (
@@ -1694,6 +1761,61 @@ export default function Main({ user }) {
                         <p className="pl-2 italic text-gray-700">
                           No expenses in this category.
                         </p>
+                      </div>
+                    )}
+                    {el.expensesInCategory.length > 0 && (
+                      <div className="flex justify-between border-t-2 pl-2">
+                        <div className="flex justify-between w-4/5">
+                          <div className="pl-2"></div>
+                          <div>
+                            {calculateCategoryTotal(
+                              el.expensesInCategory
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                            {currency}
+                          </div>
+                        </div>
+                        <div className="px-1 flex">
+                          <form
+                            onSubmit={(e) => handleCategoryGoalSubmit(e, el)}
+                          >
+                            <input
+                              className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                              id="category-goal-amount"
+                              size="10"
+                              key={'categoryGoal_' + el.categoryName}
+                              type="text"
+                              onClick={() =>
+                                prepareAmountEdit(
+                                  'categoryGoalAmount',
+                                  el.categoryName,
+                                  el.categoryGoalAmount
+                                )
+                              }
+                              onChange={(e) => handleAmountChange(e)}
+                              onBlur={(e) => handleCategoryGoalSubmit(e, el)}
+                              spellCheck="false"
+                              autoComplete="off"
+                              value={
+                                openPopover ===
+                                'categoryGoalAmount_' + el.categoryName
+                                  ? userAmountValue
+                                  : el.categoryGoalAmount > 0
+                                  ? el.categoryGoalAmount.toLocaleString(
+                                      undefined,
+                                      {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      }
+                                    )
+                                  : 'Add goal'
+                              }
+                            />
+                          </form>
+                          {el.categoryGoalAmount > 0 && currency}
+                        </div>
                       </div>
                     )}
                   </div>

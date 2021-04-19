@@ -16,6 +16,7 @@ export const MONTHS = [
 export const DEFAULT_CATEGORIES = [
   {
     categoryName: 'immediate obligations',
+    categoryGoalAmount: 0,
     expensesInCategory: [
       { expense: 'rent', amount: 0, goalAmount: 0 },
       { expense: 'electric', amount: 0, goalAmount: 0 },
@@ -27,6 +28,7 @@ export const DEFAULT_CATEGORIES = [
   },
   {
     categoryName: 'true expenses',
+    categoryGoalAmount: 0,
     expensesInCategory: [
       { expense: 'car maintenance', amount: 0, goalAmount: 0 },
       { expense: 'home maintenance', amount: 0, goalAmount: 0 },
@@ -42,6 +44,7 @@ export const DEFAULT_CATEGORIES = [
   },
   {
     categoryName: 'quality of life',
+    categoryGoalAmount: 0,
     expensesInCategory: [
       { expense: 'vacation', amount: 0, goalAmount: 0 },
       { expense: 'gym membership', amount: 0, goalAmount: 0 },
@@ -50,6 +53,7 @@ export const DEFAULT_CATEGORIES = [
   },
   {
     categoryName: 'subscriptions',
+    categoryGoalAmount: 0,
     expensesInCategory: [
       { expense: 'netflix', amount: 0, goalAmount: 0 },
       { expense: 'spotify', amount: 0, goalAmount: 0 },
@@ -57,6 +61,7 @@ export const DEFAULT_CATEGORIES = [
   },
   {
     categoryName: 'fun',
+    categoryGoalAmount: 0,
     expensesInCategory: [
       { expense: 'gaming', amount: 0, goalAmount: 0 },
       { expense: 'music', amount: 0, goalAmount: 0 },
