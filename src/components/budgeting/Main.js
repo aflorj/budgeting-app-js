@@ -6,10 +6,10 @@ import { Popover, ArrowContainer } from 'react-tiny-popover';
 import firebase from 'firebase/app';
 import { MONTHS, DEFAULT_CATEGORIES } from '../../constants';
 import { ChevronRightIcon, ChevronLeftIcon } from '@heroicons/react/outline';
+import { Line } from 'rc-progress';
 
-// TODO dealing with recurring expenses
-// IDEA useEffect with budgetState updating the db?
-// TODO refactor: create a function that adds toLocaleString + currenct
+// TODO dealing with recurring expense, adding saving/purchase goals
+// TODO refactor: create a function that adds toLocaleString + currency
 
 const currency = '€'; // hard-coded for now - should be an option in the user's settings
 const date = new Date();
@@ -1043,6 +1043,22 @@ export default function Main({ user }) {
     }
   }
 
+  // TODO check for previous budgets from the user
+  // TEMPORARY condition for displaying the 'previous month' arrow
+  function conditionPrevious() {
+    if (displayedBudget.year > currentYear) {
+      return true;
+    } else if (displayedBudget.month >= currentMonth) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  function calculatePercentage(amount, goal) {
+    return Math.round((amount * 100) / goal);
+  }
+
   return loading ? (
     <Loading />
   ) : (
@@ -1050,8 +1066,7 @@ export default function Main({ user }) {
       {/* head start */}
       <div className="bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
         <div className="ml-20 flex items-center">
-          {true && (
-            // TODO replace 'true' with a function that checks for previous budgets from this user
+          {conditionPrevious() && (
             <ChevronLeftIcon
               className="h-8 w-8 cursor-pointer transform transition hover:scale-125 opacity-50 hover:opacity-100"
               onClick={() => changeMonth('previous')}
@@ -1546,107 +1561,162 @@ export default function Main({ user }) {
                         >
                           {/* ta objame expense in prvi input */}
                           <div className="flex justify-between w-4/5">
-                            {/*  */}
-                            <div className="cursor-pointer">
-                              {/* editing an expense - start */}
-                              <Popover
-                                isOpen={
-                                  openPopover ===
-                                  'expense_' + expenseObject.expense
-                                }
-                                positions={['bottom', 'top']}
-                                onClickOutside={() => resetPopover()}
-                                content={({
-                                  position,
-                                  childRect,
-                                  popoverRect,
-                                }) => (
-                                  <ArrowContainer
-                                    position={position}
-                                    childRect={childRect}
-                                    popoverRect={popoverRect}
-                                    arrowColor={'white'}
-                                    arrowSize={10}
-                                    arrowStyle={{ opacity: 0.7 }}
-                                  >
-                                    <div className="rounded-md bg-white p-2">
-                                      <form
-                                        onSubmit={(e) =>
-                                          handleExpenseEditSubmit(
-                                            e,
-                                            el.categoryName,
-                                            expenseObject.expense
-                                          )
-                                        }
-                                      >
-                                        <input
-                                          className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
-                                          spellCheck="false"
-                                          autoComplete="off"
-                                          maxLength="64"
-                                          type="text"
-                                          placeholder="New name for this expense"
-                                          value={userInputValue}
-                                          ref={inputElement}
-                                          onChange={(e) => handleInputChange(e)}
-                                        />
-                                        {popoverError && (
-                                          <div className="text-sm text-red-500">
-                                            {popoverError}
-                                          </div>
-                                        )}
-                                        <div className="pt-2 flex justify-between">
-                                          <button
-                                            type="button"
-                                            onClick={(e) =>
-                                              deleteExpense(
-                                                e,
-                                                el.categoryName,
-                                                expenseObject.expense
-                                              )
-                                            }
-                                            className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                          >
-                                            Delete
-                                          </button>
-                                          <div className="flex">
-                                            <button
-                                              type="button"
-                                              onClick={() => resetPopover()}
-                                              className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
-                                            >
-                                              Cancel
-                                            </button>
-                                            <button
-                                              type="submit"
-                                              className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
-                                            >
-                                              OK
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </form>
-                                    </div>
-                                  </ArrowContainer>
-                                )}
-                              >
-                                <div
-                                  className="pl-2 flex hover:text-gray-600"
-                                  id="expense-name"
-                                  onClick={() =>
+                            <div className="flex justify-between w-7/12">
+                              <div className="cursor-pointer">
+                                {/* editing an expense - start */}
+                                <Popover
+                                  isOpen={
                                     openPopover ===
                                     'expense_' + expenseObject.expense
-                                      ? resetPopover()
-                                      : prepareEdit(
-                                          'expense_',
-                                          expenseObject.expense
-                                        )
                                   }
+                                  positions={['bottom', 'top']}
+                                  onClickOutside={() => resetPopover()}
+                                  content={({
+                                    position,
+                                    childRect,
+                                    popoverRect,
+                                  }) => (
+                                    <ArrowContainer
+                                      position={position}
+                                      childRect={childRect}
+                                      popoverRect={popoverRect}
+                                      arrowColor={'white'}
+                                      arrowSize={10}
+                                      arrowStyle={{ opacity: 0.7 }}
+                                    >
+                                      <div className="rounded-md bg-white p-2">
+                                        <form
+                                          onSubmit={(e) =>
+                                            handleExpenseEditSubmit(
+                                              e,
+                                              el.categoryName,
+                                              expenseObject.expense
+                                            )
+                                          }
+                                        >
+                                          <input
+                                            className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            maxLength="64"
+                                            type="text"
+                                            placeholder="New name for this expense"
+                                            value={userInputValue}
+                                            ref={inputElement}
+                                            onChange={(e) =>
+                                              handleInputChange(e)
+                                            }
+                                          />
+                                          {popoverError && (
+                                            <div className="text-sm text-red-500">
+                                              {popoverError}
+                                            </div>
+                                          )}
+                                          <div className="pt-2 flex justify-between">
+                                            <button
+                                              type="button"
+                                              onClick={(e) =>
+                                                deleteExpense(
+                                                  e,
+                                                  el.categoryName,
+                                                  expenseObject.expense
+                                                )
+                                              }
+                                              className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                            >
+                                              Delete
+                                            </button>
+                                            <div className="flex">
+                                              <button
+                                                type="button"
+                                                onClick={() => resetPopover()}
+                                                className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                              >
+                                                Cancel
+                                              </button>
+                                              <button
+                                                type="submit"
+                                                className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                              >
+                                                OK
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </ArrowContainer>
+                                  )}
                                 >
-                                  {expenseObject.expense}
-                                </div>
-                              </Popover>
-                              {/* editing an expense - end */}
+                                  <div
+                                    className="pl-2 flex hover:text-gray-600"
+                                    id="expense-name"
+                                    onClick={() =>
+                                      openPopover ===
+                                      'expense_' + expenseObject.expense
+                                        ? resetPopover()
+                                        : prepareEdit(
+                                            'expense_',
+                                            expenseObject.expense
+                                          )
+                                    }
+                                  >
+                                    {expenseObject.expense}
+                                  </div>
+                                </Popover>
+                                {/* editing an expense - end */}
+                              </div>
+                              <div className="w-1/3 text-sm">
+                                {expenseObject.goalAmount > 0 &&
+                                  expenseObject.amount > 0 &&
+                                  expenseObject.amount <=
+                                    expenseObject.goalAmount && (
+                                    <div className="items-center flex space-x-2">
+                                      <Line
+                                        percent={calculatePercentage(
+                                          expenseObject.amount,
+                                          expenseObject.goalAmount
+                                        )}
+                                        strokeWidth="10"
+                                        trailWidth="10"
+                                        strokeColor={
+                                          calculatePercentage(
+                                            expenseObject.amount,
+                                            expenseObject.goalAmount
+                                          ) < 70
+                                            ? '#34d399'
+                                            : calculatePercentage(
+                                                expenseObject.amount,
+                                                expenseObject.goalAmount
+                                              ) < 90
+                                            ? '#FFA500'
+                                            : '#FF0000'
+                                        }
+                                      />
+                                      <div>
+                                        {calculatePercentage(
+                                          expenseObject.amount,
+                                          expenseObject.goalAmount
+                                        ) + '%'}
+                                      </div>
+                                    </div>
+                                  )}
+                                {expenseObject.goalAmount > 0 &&
+                                  expenseObject.amount > 0 &&
+                                  expenseObject.amount >
+                                    expenseObject.goalAmount && (
+                                    <div className="text-red-500 text-base font-bold">
+                                      {'-'}
+                                      {(
+                                        expenseObject.amount -
+                                        expenseObject.goalAmount
+                                      ).toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                      {currency}
+                                    </div>
+                                  )}
+                              </div>
                             </div>
                             <div className="flex">
                               <form
@@ -1747,7 +1817,7 @@ export default function Main({ user }) {
                                           maximumFractionDigits: 2,
                                         }
                                       )
-                                    : 'Add goal'
+                                    : 'Set limit'
                                 }
                               />
                             </form>
@@ -1764,9 +1834,74 @@ export default function Main({ user }) {
                       </div>
                     )}
                     {el.expensesInCategory.length > 0 && (
-                      <div className="flex justify-between border-t-2 pl-2">
+                      <div className="flex justify-between border-t-2 pl-2 bg-green-100 rounded-lg">
                         <div className="flex justify-between w-4/5">
-                          <div className="pl-2"></div>
+                          <div className="flex justify-between w-7/12">
+                            <div className="pl-2"></div>
+                            <div className="w-1/3 text-sm">
+                              {el.categoryGoalAmount > 0 &&
+                                calculateCategoryTotal(el.expensesInCategory) >
+                                  0 &&
+                                calculateCategoryTotal(el.expensesInCategory) <=
+                                  el.categoryGoalAmount && (
+                                  <div className="items-center flex space-x-2">
+                                    <Line
+                                      percent={calculatePercentage(
+                                        calculateCategoryTotal(
+                                          el.expensesInCategory
+                                        ),
+                                        el.categoryGoalAmount
+                                      )}
+                                      strokeWidth="10"
+                                      trailWidth="10"
+                                      strokeColor={
+                                        calculatePercentage(
+                                          calculateCategoryTotal(
+                                            el.expensesInCategory
+                                          ),
+                                          el.categoryGoalAmount
+                                        ) < 70
+                                          ? '#34d399'
+                                          : calculatePercentage(
+                                              calculateCategoryTotal(
+                                                el.expensesInCategory
+                                              ),
+                                              el.categoryGoalAmount
+                                            ) < 90
+                                          ? '#FFA500'
+                                          : '#FF0000'
+                                      }
+                                    />
+                                    <div>
+                                      {calculatePercentage(
+                                        calculateCategoryTotal(
+                                          el.expensesInCategory
+                                        ),
+                                        el.categoryGoalAmount
+                                      ) + '%'}
+                                    </div>
+                                  </div>
+                                )}
+                              {el.categoryGoalAmount > 0 &&
+                                calculateCategoryTotal(el.expensesInCategory) >
+                                  0 &&
+                                calculateCategoryTotal(el.expensesInCategory) >
+                                  el.categoryGoalAmount && (
+                                  <div className="text-red-500 text-base font-bold">
+                                    {'-'}
+                                    {(
+                                      calculateCategoryTotal(
+                                        el.expensesInCategory
+                                      ) - el.categoryGoalAmount
+                                    ).toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                    {currency}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
                           <div>
                             {calculateCategoryTotal(
                               el.expensesInCategory
@@ -1782,7 +1917,7 @@ export default function Main({ user }) {
                             onSubmit={(e) => handleCategoryGoalSubmit(e, el)}
                           >
                             <input
-                              className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                              className="text-right bg-green-100 cursor-pointer focus:bg-white hover:text-gray-600"
                               id="category-goal-amount"
                               size="10"
                               key={'categoryGoal_' + el.categoryName}
@@ -1810,7 +1945,7 @@ export default function Main({ user }) {
                                         maximumFractionDigits: 2,
                                       }
                                     )
-                                  : 'Add goal'
+                                  : 'Set limit'
                               }
                             />
                           </form>
