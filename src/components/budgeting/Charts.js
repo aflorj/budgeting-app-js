@@ -100,7 +100,7 @@ export default function Charts({ expenses }) {
           <ChartPieIcon className="w-6 h-6" />
           <p className="italic text-gray-600">
             You must enter at least two expenses to display the
-            <span className="text-black"> expenses chart</span>.
+            <span className="text-black"> Expenses chart</span>.
           </p>
         </div>
       )}
@@ -114,7 +114,7 @@ export default function Charts({ expenses }) {
           <ChartPieIcon className="w-6 h-6" />
           <p className="italic text-gray-600">
             You must enter expenses in at least two categories to display the
-            <span className="text-black"> categories chart</span>.
+            <span className="text-black"> Categories chart</span>.
           </p>
         </div>
       )}

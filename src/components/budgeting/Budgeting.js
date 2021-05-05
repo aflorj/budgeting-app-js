@@ -4,7 +4,7 @@ import { useHistory } from 'react-router-dom';
 import Header from './Header';
 import Main from './Main';
 
-export default function Dashboard() {
+export default function Budgeting() {
   const { currentUser, logout } = useAuth();
   const history = useHistory();
 

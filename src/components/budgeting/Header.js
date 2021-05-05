@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/outline';
 
 // TODO replace the calculator with the actual logo
-export default function Sidebar({ user, logout }) {
+export default function Header({ user, logout }) {
   return (
     <div className="px-4 py-2 flex justify-between bg-green-200 m-2 rounded-lg shadow-lg">
       <div className="flex space-x-2 items-center">

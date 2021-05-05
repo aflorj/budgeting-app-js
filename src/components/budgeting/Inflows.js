@@ -1,0 +1,428 @@
+import React from 'react';
+import { cloneDeep } from 'lodash';
+import { db } from '../../firebase';
+import firebase from 'firebase/app';
+import { Popover, ArrowContainer } from 'react-tiny-popover';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import {
+  budgetDataAtom,
+  openPopoverAtom,
+  userInputValueAtom,
+  popoverErrorAtom,
+  userAmountValueAtom,
+  preferencesAtom,
+} from '../../utils/atoms';
+
+export default function Inflows({ user, inputElement }) {
+  const [userInputValue, setUserInputValue] = useRecoilState(
+    userInputValueAtom
+  );
+  const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
+  const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
+  const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
+  const [userAmountValue, setUserAmountValue] = useRecoilState(
+    userAmountValueAtom
+  );
+  const preferences = useRecoilValue(preferencesAtom);
+
+  // TODO refactor firestore documents references
+  const dbRefUser = db.collection('usersdb').doc(user.uid);
+  const docRefRecurringData = dbRefUser
+    .collection('recurringData')
+    .doc('recurringData');
+  //
+
+  // COMMON
+  function resetPopover() {
+    setOpenPopover(false);
+    setUserInputValue('');
+    setPopoverError('');
+  }
+
+  function handleAmountChange(e) {
+    setUserAmountValue(e.target.value);
+  }
+
+  function handleInputChange(e) {
+    setUserInputValue(e.target.value);
+    setPopoverError('');
+  }
+
+  function prepareEdit(type, element) {
+    setUserInputValue(element);
+    setOpenPopover(type + element);
+    // using 'type_' (ex: expense_something, category_something) to prevent a bug
+    // when the user creates a category, an expense and an inflow with the same name
+  }
+
+  function prepareAmountEdit(type, element, amount) {
+    setOpenPopover(type + '_' + element);
+    if (amount === 0) {
+      // this fix can be removed when/if input value is highlighted on click
+      setUserAmountValue('');
+    } else {
+      setUserAmountValue(amount);
+    }
+  }
+
+  // COMMON
+
+  // adding an inflow
+  function handleInflowSubmit(e) {
+    e.preventDefault();
+    const userInput = userInputValue.trim();
+
+    // find potential duplicates
+    const inflowDuplicates = budgetData.inflows.find(
+      (inflow) => inflow.inflowName.toLowerCase() === userInput.toLowerCase()
+    );
+
+    // first check if the inflow with this name already exists
+    if (inflowDuplicates) {
+      setPopoverError('Inflow already exists!');
+    } else if (userInputValue.length > 0) {
+      // if user entered a unique name for the new inflow
+      // check if the name is valid
+      if (userInput.length > 0) {
+        // add the new custom inflow to the local state
+        setBudgetData((budgetData) => ({
+          ...budgetData,
+          inflows: [
+            ...budgetData.inflows,
+            {
+              inflowName: userInput,
+              amount: 0,
+            },
+          ],
+        }));
+        // reset the inflow popover
+        resetPopover();
+      } else {
+        setPopoverError('Invalid inflow name!');
+      }
+    } else {
+      // user didn't enter anything
+      resetPopover();
+    }
+  }
+
+  // renaming an inflow
+  function handleInflowEditSubmit(e, inflow) {
+    e.preventDefault();
+    const userInput = userInputValue.trim();
+
+    // potential duplicates
+    const inflowDuplicates = budgetData.inflows.find(
+      (element) => element.inflowName.toLowerCase() === userInput.toLowerCase()
+    );
+
+    // first check if there were any changes to the inflow name
+    if (inflow === userInput) {
+      // no changes, close the popover
+      resetPopover();
+    } else {
+      // changes were made, check if the new name is valid
+      if (userInputValue.length > 0) {
+        if (userInput.length > 0) {
+          // valid input but still need to check for duplicates
+          if (inflowDuplicates) {
+            // the new inflow name is not unique, throw an error and leave the popover open
+            setPopoverError('Inflow already exists!');
+          } else {
+            // the new inflow name is unique
+            // change the inflow name and close the popover
+
+            // find the index of the inflow that we want to edit the name of
+            const inflowsIndex = budgetData.inflows.findIndex(
+              (element) => element.inflowName === inflow
+            );
+
+            // create a copy of the inflows array
+            // find the correct inflow and rename it
+            let inflowsArrayCopy = cloneDeep(budgetData.inflows);
+            inflowsArrayCopy[inflowsIndex].inflowName = userInput;
+
+            setBudgetData((budgetData) => ({
+              ...budgetData,
+              inflows: inflowsArrayCopy,
+            }));
+
+            // reset the inflows popover
+            resetPopover();
+          }
+        } else {
+          // invalid input, throw an error and leave the popover open
+          setPopoverError('Invalid inflow name!');
+        }
+      } else {
+        // user cleared the input - cancel the edit
+        resetPopover();
+      }
+    }
+  }
+
+  // removing an inflow
+  // TODO handling the recurring doc
+  function deleteInflow(e, inflow) {
+    e.preventDefault();
+
+    // find the index of the object we're removing from the array
+    const indexToRemove = budgetData.inflows.findIndex(
+      (element) => element.inflowName === inflow
+    );
+
+    // delete the inflow from the local data
+    let inflowsArrayCopy = cloneDeep(budgetData.inflows);
+    inflowsArrayCopy.splice(indexToRemove, 1);
+    setBudgetData((budgetData) => ({
+      ...budgetData,
+      inflows: inflowsArrayCopy,
+    }));
+
+    // delete the inflow from the db
+    const objectToRemove = budgetData.inflows[indexToRemove];
+
+    // 'recurring' document
+    docRefRecurringData.update({
+      inflows: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
+    });
+
+    //setOpenPopover(false); mora bit ceu reset, right?
+    resetPopover();
+  }
+
+  // changing the amount of an inflow
+  function handleInflowAmountSubmit(e, inflow) {
+    e.preventDefault();
+
+    // the index of the inflow and a copy of the inflows array
+    const indexOfInflow = budgetData.inflows.findIndex(
+      (element) => element.inflowName === inflow.inflowName
+    );
+    let inflowsArrayCopy = cloneDeep(budgetData.inflows);
+
+    // clearing the input and submitting equals to setting the inflow amount to zero
+    if (userAmountValue.length === 0) {
+      inflowsArrayCopy[indexOfInflow].amount = 0;
+
+      // set it to zero in the local state
+      setBudgetData((budgetData) => ({
+        ...budgetData,
+        inflows: inflowsArrayCopy,
+      }));
+    } else {
+      // the user has changed the amount of this inflow and did not leave the input field empty
+      // and the value of the input was a number
+      if (
+        inflow.amount !== parseFloat(userAmountValue) &&
+        !isNaN(userAmountValue)
+      ) {
+        // apply the changes to the local state
+        inflowsArrayCopy[indexOfInflow].amount = parseFloat(userAmountValue);
+        setBudgetData((budgetData) => ({
+          ...budgetData,
+          inflows: inflowsArrayCopy,
+        }));
+        // TODO recurring
+      }
+    }
+
+    setOpenPopover(false);
+  }
+
+  return (
+    <div id="all-inflows-wrapper" className="flex flex-col">
+      <div className="flex items-center">
+        <p className="text-xl font-bold underline">Inflows</p>
+        {/* add in inflow popover - start */}
+        <Popover
+          isOpen={openPopover === 'inflow'}
+          positions={['bottom', 'right']}
+          onClickOutside={() => resetPopover()}
+          content={({ position, childRect, popoverRect }) => (
+            <ArrowContainer
+              position={position}
+              childRect={childRect}
+              popoverRect={popoverRect}
+              arrowColor={'white'}
+              arrowSize={10}
+              arrowStyle={{ opacity: 0.7 }}
+            >
+              <div className="rounded-md bg-white p-2">
+                <form onSubmit={(e) => handleInflowSubmit(e)}>
+                  <input
+                    className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                    spellCheck="false"
+                    autoComplete="off"
+                    placeholder="New Inflow"
+                    maxLength="64"
+                    type="text"
+                    ref={inputElement}
+                    value={userInputValue}
+                    onChange={(e) => handleInputChange(e)}
+                  />
+                  {popoverError && (
+                    <div className="text-sm text-red-500">{popoverError}</div>
+                  )}
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => resetPopover()}
+                      className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </ArrowContainer>
+          )}
+        >
+          <div className="inline-block">
+            <button
+              className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
+              onClick={() =>
+                openPopover === 'inflow'
+                  ? resetPopover()
+                  : setOpenPopover('inflow')
+              }
+            >
+              +
+            </button>
+          </div>
+        </Popover>
+        {/* add an inflow popover - end */}
+      </div>
+      <div>
+        {budgetData.inflows.length ? (
+          budgetData.inflows.map((inflow) => (
+            <div className="flex space-x-2">
+              <div>
+                <div className="cursor-pointer">
+                  {/* edit an inflow popover - start */}
+                  <Popover
+                    isOpen={openPopover === 'inflow_' + inflow.inflowName}
+                    positions={['bottom', 'top']}
+                    onClickOutside={() => resetPopover()}
+                    content={({ position, childRect, popoverRect }) => (
+                      <ArrowContainer
+                        position={position}
+                        childRect={childRect}
+                        popoverRect={popoverRect}
+                        arrowColor={'white'}
+                        arrowSize={10}
+                        arrowStyle={{ opacity: 0.7 }}
+                      >
+                        <div className="rounded-md bg-white p-2">
+                          <form
+                            onSubmit={(e) =>
+                              handleInflowEditSubmit(e, inflow.inflowName)
+                            }
+                          >
+                            <input
+                              className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
+                              spellCheck="false"
+                              autoComplete="off"
+                              maxLength="64"
+                              type="text"
+                              placeholder="New name for this category"
+                              ref={inputElement}
+                              value={userInputValue}
+                              onChange={(e) => handleInputChange(e)}
+                            />
+                            {popoverError && (
+                              <div className="text-sm text-red-500">
+                                {popoverError}
+                              </div>
+                            )}
+                            <div className="pt-2 flex justify-between">
+                              <button
+                                type="button"
+                                onClick={(e) =>
+                                  deleteInflow(e, inflow.inflowName)
+                                }
+                                className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                              >
+                                Delete
+                              </button>
+                              <div className="flex">
+                                <button
+                                  type="button"
+                                  onClick={() => resetPopover()}
+                                  className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
+                                >
+                                  OK
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </ArrowContainer>
+                    )}
+                  >
+                    <div
+                      className="pl-2 flex hover:text-gray-600"
+                      onClick={() =>
+                        openPopover === 'inflow_' + inflow.inflowName
+                          ? resetPopover()
+                          : prepareEdit('inflow_', inflow.inflowName)
+                      }
+                    >
+                      {inflow.inflowName}
+                    </div>
+                  </Popover>
+                  {/* edit an inflow popover - end  */}
+                </div>
+              </div>
+              <div className="px-1 flex">
+                <form onSubmit={(e) => handleInflowAmountSubmit(e, inflow)}>
+                  <input
+                    className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                    id="inflow-amount"
+                    key={inflow.inflowName}
+                    size="10"
+                    type="text"
+                    onClick={() =>
+                      prepareAmountEdit(
+                        'inflowAmount',
+                        inflow.inflowName,
+                        inflow.amount
+                      )
+                    }
+                    onChange={(e) => handleAmountChange(e)}
+                    onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
+                    spellCheck="false"
+                    autoComplete="false"
+                    value={
+                      openPopover === 'inflowAmount_' + inflow.inflowName
+                        ? userAmountValue
+                        : inflow.amount.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                    }
+                  />
+                </form>
+                {preferences.currency}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="pl-2 italic text-gray-700">No inflows.</div>
+        )}
+      </div>
+    </div>
+  );
+}
