@@ -9,11 +9,9 @@ import {
   preferencesAtom,
 } from '../../utils/atoms';
 
-// TODO refactor
 const date = new Date();
 const currentYear = date.getFullYear();
 const currentMonth = date.getMonth();
-//
 
 export default function BudgetInfo() {
   const budgetData = useRecoilValue(budgetDataAtom);

@@ -8,31 +8,11 @@ import {
   preferencesAtom,
 } from '../../utils/atoms';
 
-export default function CategoryLimit({ category }) {
+export default function CategoryLimit({ category, helpers }) {
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
-  const [userAmountValue, setUserAmountValue] = useRecoilState(
-    userAmountValueAtom
-  );
+  const userAmountValue = useRecoilValue(userAmountValueAtom);
   const preferences = useRecoilValue(preferencesAtom);
-
-  // COMMON
-  // sets the name and the value of the expense, inflow, expense limit or category limit that is being edited
-  function prepareAmountEdit(type, element, amount) {
-    setOpenPopover(type + '_' + element);
-    if (amount === 0) {
-      // this fix can be removed when/if input value is highlighted on click
-      setUserAmountValue('');
-    } else {
-      setUserAmountValue(amount);
-    }
-  }
-
-  // handing the change in user input when the input is a number
-  function handleAmountChange(e) {
-    setUserAmountValue(e.target.value);
-  }
-  // COMMON
 
   // changing the amount of a category limit
   function handleCategoryLimitSubmit(e, category) {
@@ -48,7 +28,7 @@ export default function CategoryLimit({ category }) {
       let expensesArrayCopy = cloneDeep(budgetData.expenses);
       expensesArrayCopy[indexOfCategory].categoryLimitAmount = 0;
 
-      // remove the category limit in the local state
+      // remove the category limit in the atom
       setBudgetData((budgetData) => ({
         ...budgetData,
         expenses: expensesArrayCopy,
@@ -58,9 +38,10 @@ export default function CategoryLimit({ category }) {
       // and the value of the input was a number
       if (
         category.categoryLimitAmount !== parseFloat(userAmountValue) &&
-        !isNaN(userAmountValue)
+        !isNaN(userAmountValue) &&
+        parseFloat(userAmountValue) > 0
       ) {
-        // apply the changes to the local state
+        // apply the changes to the atom
         // copy of the array of the expenses in the category the edited category belongs to
         let expensesArrayCopy = cloneDeep(budgetData.expenses);
         expensesArrayCopy[indexOfCategory].categoryLimitAmount = parseFloat(
@@ -86,13 +67,13 @@ export default function CategoryLimit({ category }) {
           key={'categoryLimit_' + category.categoryName}
           type="text"
           onClick={() =>
-            prepareAmountEdit(
+            helpers.prepareAmountEdit(
               'categoryLimitAmount',
               category.categoryName,
               category.categoryLimitAmount
             )
           }
-          onChange={(e) => handleAmountChange(e)}
+          onChange={(e) => helpers.handleAmountChange(e)}
           onBlur={(e) => handleCategoryLimitSubmit(e, category)}
           spellCheck="false"
           autoComplete="off"

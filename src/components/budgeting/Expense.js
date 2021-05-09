@@ -13,60 +13,18 @@ import {
   preferencesAtom,
 } from '../../utils/atoms';
 
-export default function Expense({ expenseObject, categoryName, inputElement }) {
-  const [userInputValue, setUserInputValue] = useRecoilState(
-    userInputValueAtom
-  );
+export default function Expense({
+  expenseObject,
+  categoryName,
+  inputElement,
+  helpers,
+}) {
+  const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
   const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
-  const [userAmountValue, setUserAmountValue] = useRecoilState(
-    userAmountValueAtom
-  );
+  const userAmountValue = useRecoilValue(userAmountValueAtom);
   const preferences = useRecoilValue(preferencesAtom);
-
-  // COMMON
-  // prepares the category, expense or inflow edit popover
-  function prepareEdit(type, element) {
-    setUserInputValue(element);
-    setOpenPopover(type + element);
-    // using 'type_' (ex: expense_something, category_something) to prevent a bug
-    // when the user creates a category, an expense and an inflow with the same name
-  }
-
-  // sets the name and the value of the expense, inflow, expense limit or category limit that is being edited
-  function prepareAmountEdit(type, element, amount) {
-    setOpenPopover(type + '_' + element);
-    if (amount === 0) {
-      // this fix can be removed when/if input value is highlighted on click
-      setUserAmountValue('');
-    } else {
-      setUserAmountValue(amount);
-    }
-  }
-
-  // handling the change in user input and resetting the error
-  function handleInputChange(e) {
-    setUserInputValue(e.target.value);
-    setPopoverError('');
-  }
-
-  // handing the change in user input when the input is a number
-  function handleAmountChange(e) {
-    setUserAmountValue(e.target.value);
-  }
-
-  function calculatePercentage(amount, limit) {
-    return Math.round((amount * 100) / limit);
-  }
-
-  // closes the popover and resets the input value and the error value
-  function resetPopover() {
-    setOpenPopover(false);
-    setUserInputValue('');
-    setPopoverError('');
-  }
-  // COMMON
 
   // renaming an expense
   function handleExpenseEditSubmit(e, category, expense) {
@@ -87,7 +45,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
     // first check if there were any changes to the expense name
     if (expense === userInput) {
       // no changes, close the popover
-      resetPopover();
+      helpers.resetPopover();
     } else {
       // changes were made, check if the new name is valid
       if (userInputValue.length > 0) {
@@ -112,7 +70,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
               (element) => element.expense === expense
             );
 
-            // apply the changes to the local state
+            // apply the changes to the atom
             // copy of the array of the expenses in the category the edited expense belongs to
             let expensesArrayCopy = cloneDeep(budgetData.expenses);
             expensesArrayCopy[indexOfCategory].expensesInCategory[
@@ -123,7 +81,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
               expenses: expensesArrayCopy,
             }));
             // reset the expense popover
-            resetPopover();
+            helpers.resetPopover();
           }
         } else {
           // invalid input, throw an error and leave the popover open
@@ -131,13 +89,12 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
         }
       } else {
         // user cleared the input - cancel the edit
-        resetPopover();
+        helpers.resetPopover();
       }
     }
   }
 
   // removing an expense
-  // TODO handling the recurring doc
   function deleteExpense(e, category, expense) {
     e.preventDefault();
 
@@ -151,7 +108,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
       indexOfCategory
     ].expensesInCategory.findIndex((element) => element.expense === expense);
 
-    // apply the changes to the local state
+    // apply the changes to the atom
     // copy of the array of the expenses in the category the deleted expense belongs to
     let expensesArrayCopy = cloneDeep(budgetData.expenses);
     expensesArrayCopy[indexOfCategory].expensesInCategory.splice(
@@ -162,7 +119,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
       ...budgetData,
       expenses: expensesArrayCopy,
     }));
-    resetPopover();
+    helpers.resetPopover();
   }
 
   // changing the amount of an expense
@@ -188,7 +145,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
         indexOfExpense
       ].amount = 0;
 
-      // set it to zero in the local state
+      // set it to zero in the atom
       setBudgetData((budgetData) => ({
         ...budgetData,
         expenses: expensesArrayCopy,
@@ -198,9 +155,10 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
       // and the value of the input was a number
       if (
         expenseObject.amount !== parseFloat(userAmountValue) &&
-        !isNaN(userAmountValue)
+        !isNaN(userAmountValue) &&
+        parseFloat(userAmountValue) > 0
       ) {
-        // apply the changes to the local state
+        // apply the changes to the atom
         // copy of the array of the expenses in the category the edited expense belongs to
         let expensesArrayCopy = cloneDeep(budgetData.expenses);
         expensesArrayCopy[indexOfCategory].expensesInCategory[
@@ -232,7 +190,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
             <Popover
               isOpen={openPopover === 'expense_' + expenseObject.expense}
               positions={['bottom', 'top']}
-              onClickOutside={() => resetPopover()}
+              onClickOutside={() => helpers.resetPopover()}
               content={({ position, childRect, popoverRect }) => (
                 <ArrowContainer
                   position={position}
@@ -261,7 +219,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
                         placeholder="New name for this expense"
                         value={userInputValue}
                         ref={inputElement}
-                        onChange={(e) => handleInputChange(e)}
+                        onChange={(e) => helpers.handleInputChange(e)}
                       />
                       {popoverError && (
                         <div className="text-sm text-red-500">
@@ -285,7 +243,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
                         <div className="flex">
                           <button
                             type="button"
-                            onClick={() => resetPopover()}
+                            onClick={() => helpers.resetPopover()}
                             className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                           >
                             Cancel
@@ -308,8 +266,8 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
                 id="expense-name"
                 onClick={() =>
                   openPopover === 'expense_' + expenseObject.expense
-                    ? resetPopover()
-                    : prepareEdit('expense_', expenseObject.expense)
+                    ? helpers.resetPopover()
+                    : helpers.prepareEdit('expense_', expenseObject.expense)
                 }
               >
                 {expenseObject.expense}
@@ -323,19 +281,19 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
               expenseObject.amount <= expenseObject.limitAmount && (
                 <div className="items-center flex space-x-2">
                   <Line
-                    percent={calculatePercentage(
+                    percent={helpers.calculatePercentage(
                       expenseObject.amount,
                       expenseObject.limitAmount
                     )}
                     strokeWidth="10"
                     trailWidth="10"
                     strokeColor={
-                      calculatePercentage(
+                      helpers.calculatePercentage(
                         expenseObject.amount,
                         expenseObject.limitAmount
                       ) < 70
                         ? '#34d399'
-                        : calculatePercentage(
+                        : helpers.calculatePercentage(
                             expenseObject.amount,
                             expenseObject.limitAmount
                           ) < 90
@@ -344,7 +302,7 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
                     }
                   />
                   <div>
-                    {calculatePercentage(
+                    {helpers.calculatePercentage(
                       expenseObject.amount,
                       expenseObject.limitAmount
                     ) + '%'}
@@ -378,13 +336,13 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
               key={expenseObject.expense}
               type="text"
               onClick={() =>
-                prepareAmountEdit(
+                helpers.prepareAmountEdit(
                   'expenseAmount',
                   expenseObject.expense,
                   expenseObject.amount
                 )
               }
-              onChange={(e) => handleAmountChange(e)}
+              onChange={(e) => helpers.handleAmountChange(e)}
               onBlur={(e) => handleAmountSubmit(e, categoryName, expenseObject)}
               spellCheck="false"
               autoComplete="off"
@@ -403,7 +361,11 @@ export default function Expense({ expenseObject, categoryName, inputElement }) {
         {/* do tu objamemo prvi input */}
       </div>
       {/* do tu objamemo prvi input */}
-      <ExpenseLimit expenseObject={expenseObject} categoryName={categoryName} />
+      <ExpenseLimit
+        expenseObject={expenseObject}
+        categoryName={categoryName}
+        helpers={helpers}
+      />
     </div>
   );
 }

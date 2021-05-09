@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { db } from '../../firebase';
 import { DEFAULT_CATEGORIES } from '../../constants';
 import Loading from './Loading';
@@ -6,16 +6,18 @@ import Charts from './Charts';
 import BudgetInfo from './BudgetInfo';
 import Inflows from './Inflows';
 import Categories from './Categories';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   displayedBudgetAtom,
   budgetDataAtom,
   loadingAtom,
   openPopoverAtom,
+  userInputValueAtom,
+  userAmountValueAtom,
+  popoverErrorAtom,
 } from '../../utils/atoms';
 
-// TODO dealing with recurring expense, adding saving/purchase goals
-// TODO refactor: create a function that adds toLocaleString + currency
+// TODO dealing with recurring data, adding saving/purchase goals
 
 export default function Main({ user }) {
   // renders the Loading component while the data is being fetched
@@ -27,9 +29,13 @@ export default function Main({ user }) {
   // month/year of the currently displayed budget
   const displayedBudget = useRecoilValue(displayedBudgetAtom);
 
-  // popover state shared between all popovers
-  // false or the name of the currently open popover
-  const openPopover = useRecoilValue(openPopoverAtom);
+  // false or the name of the currently open popover/popover error
+  const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
+  const setPopoverError = useSetRecoilState(popoverErrorAtom);
+
+  // holds the name and the amount of the inflow/category/expense/limit being edited
+  const setUserInputValue = useSetRecoilState(userInputValueAtom);
+  const setUserAmountValue = useSetRecoilState(userAmountValueAtom);
 
   // focus ref
   const inputElement = useRef(null);
@@ -70,6 +76,49 @@ export default function Main({ user }) {
     .collection('budgetsByMonth')
     .doc(displayedBudget.year + '_' + displayedBudget.month);
 
+  const helpers = {
+    // prepares the category, expense or inflow edit popover
+    prepareEdit(type, element) {
+      setUserInputValue(element);
+      setOpenPopover(type + element);
+      // using 'type_' (ex: expense_something, category_something) to prevent a bug
+      // when the user creates a category, an expense and an inflow with the same name
+    },
+
+    // sets the name and the value of the expense, inflow, expense goal or category goal that is being edited
+    prepareAmountEdit(type, element, amount) {
+      setOpenPopover(type + '_' + element);
+      if (amount === 0) {
+        // this fix can be removed when/if input value is highlighted on click
+        setUserAmountValue('');
+      } else {
+        setUserAmountValue(amount);
+      }
+    },
+
+    // handling the change in user input and resetting the error
+    handleInputChange(e) {
+      setUserInputValue(e.target.value);
+      setPopoverError('');
+    },
+
+    // handing the change in user input when the input is a number
+    handleAmountChange(e) {
+      setUserAmountValue(e.target.value);
+    },
+
+    calculatePercentage(amount, goal) {
+      return Math.round((amount * 100) / goal);
+    },
+
+    // closes the popover and resets the input value and the error value
+    resetPopover() {
+      setOpenPopover(false);
+      setUserInputValue('');
+      setPopoverError('');
+    },
+  };
+
   // the user logs in and main.js is rendered
   useEffect(() => {
     // check if this is a new user
@@ -98,14 +147,11 @@ export default function Main({ user }) {
                 docRefRecurringData
                   .get()
                   .then((doc) => {
-                    // local budget state set to the user's recurring doc data
+                    // atom set to the user's recurring doc data
                     setBudgetData(doc.data());
 
                     // render
                     setLoading(false);
-
-                    // set the user's current month doc the the user's recurring doc data
-                    //docRefCurrentMonth.set(doc.data()); eeee
                   })
                   .catch((error) => {
                     console.log('Error getting the recurring document:', error);
@@ -118,7 +164,7 @@ export default function Main({ user }) {
         } else {
           // NEW USER
 
-          // set local state to a default default preset
+          // set atom to a default default preset
           setBudgetData({
             expenses: DEFAULT_CATEGORIES,
             inflows: [],
@@ -164,7 +210,7 @@ export default function Main({ user }) {
         if (doc.exists) {
           // user is switching to a budget that exists
 
-          // set local state with the data from the fetch month document
+          // set atom to the data from the fetch month document
           setBudgetData(doc.data());
         } else {
           // user is creating a new budget document for the month
@@ -173,7 +219,7 @@ export default function Main({ user }) {
           docRefRecurringData
             .get()
             .then((doc) => {
-              // local budget state set to the user's recurring doc data
+              // atom set to the user's recurring doc data
               setBudgetData(doc.data());
             })
             .catch((error) => {
@@ -203,8 +249,16 @@ export default function Main({ user }) {
       <BudgetInfo />
       <div className="flex flex-row">
         <div className="overflow-y-auto m-2 flex-col space-y-2 w-1/2">
-          <Inflows user={user} inputElement={inputElement} />
-          <Categories user={user} inputElement={inputElement} />
+          <Inflows
+            inputElement={inputElement}
+            helpers={helpers}
+            docRefRecurringData={docRefRecurringData}
+          />
+          <Categories
+            inputElement={inputElement}
+            helpers={helpers}
+            docRefRecurringData={docRefRecurringData}
+          />
         </div>
         <div className="w-1/2 m-2">
           <Charts expenses={budgetData.expenses} />

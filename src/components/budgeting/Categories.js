@@ -1,6 +1,5 @@
 import React from 'react';
 import { cloneDeep } from 'lodash';
-import { db } from '../../firebase';
 import firebase from 'firebase/app';
 import { Line } from 'rc-progress';
 import Expense from './Expense';
@@ -11,72 +10,20 @@ import {
   openPopoverAtom,
   userInputValueAtom,
   popoverErrorAtom,
-  userAmountValueAtom,
   preferencesAtom,
 } from '../../utils/atoms';
 import CategoryLimit from './CategoryLimit';
 
-export default function Categories({ user, inputElement }) {
-  const [userInputValue, setUserInputValue] = useRecoilState(
-    userInputValueAtom
-  );
+export default function Categories({
+  inputElement,
+  helpers,
+  docRefRecurringData,
+}) {
+  const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
   const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
-  const [userAmountValue, setUserAmountValue] = useRecoilState(
-    userAmountValueAtom
-  );
   const preferences = useRecoilValue(preferencesAtom);
-
-  // TODO refactor firestore documents references
-  const dbRefUser = db.collection('usersdb').doc(user.uid);
-  const docRefRecurringData = dbRefUser
-    .collection('recurringData')
-    .doc('recurringData');
-  //
-
-  // COMMON
-  // prepares the category, expense or inflow edit popover
-  function prepareEdit(type, element) {
-    setUserInputValue(element);
-    setOpenPopover(type + element);
-    // using 'type_' (ex: expense_something, category_something) to prevent a bug
-    // when the user creates a category, an expense and an inflow with the same name
-  }
-
-  // sets the name and the value of the expense, inflow, expense limit or category limit that is being edited
-  function prepareAmountEdit(type, element, amount) {
-    setOpenPopover(type + '_' + element);
-    if (amount === 0) {
-      // this fix can be removed when/if input value is highlighted on click
-      setUserAmountValue('');
-    } else {
-      setUserAmountValue(amount);
-    }
-  }
-
-  // handling the change in user input and resetting the error
-  function handleInputChange(e) {
-    setUserInputValue(e.target.value);
-    setPopoverError('');
-  }
-
-  // handing the change in user input when the input is a number
-  function handleAmountChange(e) {
-    setUserAmountValue(e.target.value);
-  }
-
-  function calculatePercentage(amount, limit) {
-    return Math.round((amount * 100) / limit);
-  }
-
-  // closes the popover and resets the input value and the error value
-  function resetPopover() {
-    setOpenPopover(false);
-    setUserInputValue('');
-    setPopoverError('');
-  }
-  // COMMON
 
   // adding a category
   function handleCategorySubmit(e) {
@@ -118,13 +65,13 @@ export default function Categories({ user, inputElement }) {
         });
 
         // reset the category popover
-        resetPopover();
+        helpers.resetPopover();
       } else {
         setPopoverError('Invalid category name!');
       }
     } else {
       // user didn't enter anything
-      resetPopover();
+      helpers.resetPopover();
     }
   }
 
@@ -142,7 +89,7 @@ export default function Categories({ user, inputElement }) {
     // first check if there were any changes to the category name
     if (category === userInput) {
       // no changes, close the popover
-      resetPopover();
+      helpers.resetPopover();
     } else {
       // changes were made, check if the new name is valid
       if (userInputValue.length > 0) {
@@ -161,7 +108,7 @@ export default function Categories({ user, inputElement }) {
             );
 
             // create a copy of the expenses array
-            // find the correct category and rename it
+            // find the correct category and rename it in the atom
             let expensesArrayCopy = cloneDeep(budgetData.expenses);
             expensesArrayCopy[elementsIndex].categoryName = userInput;
 
@@ -171,7 +118,7 @@ export default function Categories({ user, inputElement }) {
             }));
 
             // reset the category popover
-            resetPopover();
+            helpers.resetPopover();
           }
         } else {
           //invalid input, display an error and leave the popover open
@@ -179,7 +126,7 @@ export default function Categories({ user, inputElement }) {
         }
       } else {
         // user cleared the input - cancel the edit
-        resetPopover();
+        helpers.resetPopover();
       }
     }
   }
@@ -194,7 +141,7 @@ export default function Categories({ user, inputElement }) {
       (element) => element.categoryName === category
     );
 
-    // delete the category from the local state
+    // delete the category from the atom
     let expensesArrayCopy = cloneDeep(budgetData.expenses);
     expensesArrayCopy.splice(indexToRemove, 1);
     setBudgetData((budgetData) => ({
@@ -204,7 +151,7 @@ export default function Categories({ user, inputElement }) {
 
     // delete the category from the db
     // firestore "arrayRemove" requires an exact copy of the object being removed
-    // our data is normalized so we can find the exact object in our local state
+    // our data is normalized so we can find the exact object in our atom
     const objectToRemove = budgetData.expenses[indexToRemove];
 
     // 'recurring' document
@@ -212,8 +159,7 @@ export default function Categories({ user, inputElement }) {
       expenses: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
     });
 
-    //setOpenPopover(false);
-    resetPopover();
+    helpers.resetPopover();
   }
 
   // adding an expense
@@ -253,20 +199,20 @@ export default function Categories({ user, inputElement }) {
           limitAmount: 0,
         });
 
-        // add the expense to the local state
+        // add the expense to the atom
         setBudgetData((budgetData) => ({
           ...budgetData,
           expenses: newArrayOfExpenses,
         }));
 
         // reset the expense popover
-        resetPopover();
+        helpers.resetPopover();
       } else {
         setPopoverError('Invalid expense name!');
       }
     } else {
       // user didn't enter anything
-      resetPopover();
+      helpers.resetPopover();
     }
   }
 
@@ -286,7 +232,7 @@ export default function Categories({ user, inputElement }) {
         <Popover
           isOpen={openPopover === 'addCategory'}
           positions={['bottom', 'right']}
-          onClickOutside={() => resetPopover()}
+          onClickOutside={() => helpers.resetPopover()}
           content={({ position, childRect, popoverRect }) => (
             <ArrowContainer
               position={position}
@@ -307,7 +253,7 @@ export default function Categories({ user, inputElement }) {
                     type="text"
                     ref={inputElement}
                     value={userInputValue}
-                    onChange={(e) => handleInputChange(e)}
+                    onChange={(e) => helpers.handleInputChange(e)}
                   />
                   {popoverError && (
                     <div className="text-sm text-red-500">{popoverError}</div>
@@ -315,7 +261,7 @@ export default function Categories({ user, inputElement }) {
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => resetPopover()}
+                      onClick={() => helpers.resetPopover()}
                       className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                     >
                       Cancel
@@ -358,7 +304,7 @@ export default function Categories({ user, inputElement }) {
               <Popover
                 isOpen={openPopover === 'category_' + el.categoryName}
                 positions={['bottom', 'top']}
-                onClickOutside={() => resetPopover()}
+                onClickOutside={() => helpers.resetPopover()}
                 content={({ position, childRect, popoverRect }) => (
                   <ArrowContainer
                     position={position}
@@ -383,7 +329,7 @@ export default function Categories({ user, inputElement }) {
                           placeholder="New name for this category"
                           ref={inputElement}
                           value={userInputValue}
-                          onChange={(e) => handleInputChange(e)}
+                          onChange={(e) => helpers.handleInputChange(e)}
                         />
                         {popoverError && (
                           <div className="text-sm text-red-500">
@@ -401,7 +347,7 @@ export default function Categories({ user, inputElement }) {
                           <div className="flex">
                             <button
                               type="button"
-                              onClick={() => resetPopover()}
+                              onClick={() => helpers.resetPopover()}
                               className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                             >
                               Cancel
@@ -423,8 +369,8 @@ export default function Categories({ user, inputElement }) {
                   className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
                   onClick={() =>
                     openPopover === 'category_' + el.categoryName
-                      ? resetPopover()
-                      : prepareEdit('category_', el.categoryName)
+                      ? helpers.resetPopover()
+                      : helpers.prepareEdit('category_', el.categoryName)
                   }
                 >
                   {el.categoryName}
@@ -435,7 +381,7 @@ export default function Categories({ user, inputElement }) {
               <Popover
                 isOpen={openPopover === 'addExpense_' + el.categoryName}
                 positions={['right']}
-                onClickOutside={() => resetPopover()}
+                onClickOutside={() => helpers.resetPopover()}
                 content={({ position, childRect, popoverRect }) => (
                   <ArrowContainer
                     position={position}
@@ -460,7 +406,7 @@ export default function Categories({ user, inputElement }) {
                           type="text"
                           ref={inputElement}
                           value={userInputValue}
-                          onChange={(e) => handleInputChange(e)}
+                          onChange={(e) => helpers.handleInputChange(e)}
                         />
                         {popoverError && (
                           <div className="text-sm text-red-500">
@@ -470,7 +416,7 @@ export default function Categories({ user, inputElement }) {
                         <div className="pt-2 flex justify-end">
                           <button
                             type="button"
-                            onClick={() => resetPopover()}
+                            onClick={() => helpers.resetPopover()}
                             className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                           >
                             Cancel
@@ -492,7 +438,7 @@ export default function Categories({ user, inputElement }) {
                     className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
                     onClick={() =>
                       openPopover === 'addExpense_' + el.categoryName
-                        ? resetPopover()
+                        ? helpers.resetPopover()
                         : setOpenPopover('addExpense_' + el.categoryName)
                     }
                   >
@@ -507,6 +453,7 @@ export default function Categories({ user, inputElement }) {
                     expenseObject={expenseObject}
                     categoryName={el.categoryName}
                     inputElement={inputElement}
+                    helpers={helpers}
                   />
                 ))
               ) : (
@@ -528,21 +475,21 @@ export default function Categories({ user, inputElement }) {
                             el.categoryLimitAmount && (
                             <div className="items-center flex space-x-2">
                               <Line
-                                percent={calculatePercentage(
+                                percent={helpers.calculatePercentage(
                                   calculateCategoryTotal(el.expensesInCategory),
                                   el.categoryLimitAmount
                                 )}
                                 strokeWidth="10"
                                 trailWidth="10"
                                 strokeColor={
-                                  calculatePercentage(
+                                  helpers.calculatePercentage(
                                     calculateCategoryTotal(
                                       el.expensesInCategory
                                     ),
                                     el.categoryLimitAmount
                                   ) < 70
                                     ? '#34d399'
-                                    : calculatePercentage(
+                                    : helpers.calculatePercentage(
                                         calculateCategoryTotal(
                                           el.expensesInCategory
                                         ),
@@ -553,7 +500,7 @@ export default function Categories({ user, inputElement }) {
                                 }
                               />
                               <div>
-                                {calculatePercentage(
+                                {helpers.calculatePercentage(
                                   calculateCategoryTotal(el.expensesInCategory),
                                   el.categoryLimitAmount
                                 ) + '%'}
@@ -588,7 +535,7 @@ export default function Categories({ user, inputElement }) {
                       {preferences.currency}
                     </div>
                   </div>
-                  <CategoryLimit category={el} />
+                  <CategoryLimit category={el} helpers={helpers} />
                 </div>
               )}
             </div>

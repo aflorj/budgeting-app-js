@@ -1,6 +1,5 @@
 import React from 'react';
 import { cloneDeep } from 'lodash';
-import { db } from '../../firebase';
 import firebase from 'firebase/app';
 import { Popover, ArrowContainer } from 'react-tiny-popover';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -13,59 +12,17 @@ import {
   preferencesAtom,
 } from '../../utils/atoms';
 
-export default function Inflows({ user, inputElement }) {
-  const [userInputValue, setUserInputValue] = useRecoilState(
-    userInputValueAtom
-  );
+export default function Inflows({
+  inputElement,
+  helpers,
+  docRefRecurringData,
+}) {
+  const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
   const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
-  const [userAmountValue, setUserAmountValue] = useRecoilState(
-    userAmountValueAtom
-  );
+  const userAmountValue = useRecoilValue(userAmountValueAtom);
   const preferences = useRecoilValue(preferencesAtom);
-
-  // TODO refactor firestore documents references
-  const dbRefUser = db.collection('usersdb').doc(user.uid);
-  const docRefRecurringData = dbRefUser
-    .collection('recurringData')
-    .doc('recurringData');
-  //
-
-  // COMMON
-  function resetPopover() {
-    setOpenPopover(false);
-    setUserInputValue('');
-    setPopoverError('');
-  }
-
-  function handleAmountChange(e) {
-    setUserAmountValue(e.target.value);
-  }
-
-  function handleInputChange(e) {
-    setUserInputValue(e.target.value);
-    setPopoverError('');
-  }
-
-  function prepareEdit(type, element) {
-    setUserInputValue(element);
-    setOpenPopover(type + element);
-    // using 'type_' (ex: expense_something, category_something) to prevent a bug
-    // when the user creates a category, an expense and an inflow with the same name
-  }
-
-  function prepareAmountEdit(type, element, amount) {
-    setOpenPopover(type + '_' + element);
-    if (amount === 0) {
-      // this fix can be removed when/if input value is highlighted on click
-      setUserAmountValue('');
-    } else {
-      setUserAmountValue(amount);
-    }
-  }
-
-  // COMMON
 
   // adding an inflow
   function handleInflowSubmit(e) {
@@ -96,13 +53,13 @@ export default function Inflows({ user, inputElement }) {
           ],
         }));
         // reset the inflow popover
-        resetPopover();
+        helpers.resetPopover();
       } else {
         setPopoverError('Invalid inflow name!');
       }
     } else {
       // user didn't enter anything
-      resetPopover();
+      helpers.resetPopover();
     }
   }
 
@@ -119,7 +76,7 @@ export default function Inflows({ user, inputElement }) {
     // first check if there were any changes to the inflow name
     if (inflow === userInput) {
       // no changes, close the popover
-      resetPopover();
+      helpers.resetPopover();
     } else {
       // changes were made, check if the new name is valid
       if (userInputValue.length > 0) {
@@ -148,7 +105,7 @@ export default function Inflows({ user, inputElement }) {
             }));
 
             // reset the inflows popover
-            resetPopover();
+            helpers.resetPopover();
           }
         } else {
           // invalid input, throw an error and leave the popover open
@@ -156,7 +113,7 @@ export default function Inflows({ user, inputElement }) {
         }
       } else {
         // user cleared the input - cancel the edit
-        resetPopover();
+        helpers.resetPopover();
       }
     }
   }
@@ -187,8 +144,7 @@ export default function Inflows({ user, inputElement }) {
       inflows: firebase.firestore.FieldValue.arrayRemove(objectToRemove),
     });
 
-    //setOpenPopover(false); mora bit ceu reset, right?
-    resetPopover();
+    helpers.resetPopover();
   }
 
   // changing the amount of an inflow
@@ -205,7 +161,7 @@ export default function Inflows({ user, inputElement }) {
     if (userAmountValue.length === 0) {
       inflowsArrayCopy[indexOfInflow].amount = 0;
 
-      // set it to zero in the local state
+      // set it to zero in the atom
       setBudgetData((budgetData) => ({
         ...budgetData,
         inflows: inflowsArrayCopy,
@@ -215,15 +171,15 @@ export default function Inflows({ user, inputElement }) {
       // and the value of the input was a number
       if (
         inflow.amount !== parseFloat(userAmountValue) &&
-        !isNaN(userAmountValue)
+        !isNaN(userAmountValue) &&
+        parseFloat(userAmountValue) > 0
       ) {
-        // apply the changes to the local state
+        // apply the changes to the atom
         inflowsArrayCopy[indexOfInflow].amount = parseFloat(userAmountValue);
         setBudgetData((budgetData) => ({
           ...budgetData,
           inflows: inflowsArrayCopy,
         }));
-        // TODO recurring
       }
     }
 
@@ -238,7 +194,7 @@ export default function Inflows({ user, inputElement }) {
         <Popover
           isOpen={openPopover === 'inflow'}
           positions={['bottom', 'right']}
-          onClickOutside={() => resetPopover()}
+          onClickOutside={() => helpers.resetPopover()}
           content={({ position, childRect, popoverRect }) => (
             <ArrowContainer
               position={position}
@@ -259,7 +215,7 @@ export default function Inflows({ user, inputElement }) {
                     type="text"
                     ref={inputElement}
                     value={userInputValue}
-                    onChange={(e) => handleInputChange(e)}
+                    onChange={(e) => helpers.handleInputChange(e)}
                   />
                   {popoverError && (
                     <div className="text-sm text-red-500">{popoverError}</div>
@@ -267,7 +223,7 @@ export default function Inflows({ user, inputElement }) {
                   <div className="pt-2 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => resetPopover()}
+                      onClick={() => helpers.resetPopover()}
                       className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                     >
                       Cancel
@@ -289,7 +245,7 @@ export default function Inflows({ user, inputElement }) {
               className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
               onClick={() =>
                 openPopover === 'inflow'
-                  ? resetPopover()
+                  ? helpers.resetPopover()
                   : setOpenPopover('inflow')
               }
             >
@@ -309,7 +265,7 @@ export default function Inflows({ user, inputElement }) {
                   <Popover
                     isOpen={openPopover === 'inflow_' + inflow.inflowName}
                     positions={['bottom', 'top']}
-                    onClickOutside={() => resetPopover()}
+                    onClickOutside={() => helpers.resetPopover()}
                     content={({ position, childRect, popoverRect }) => (
                       <ArrowContainer
                         position={position}
@@ -334,7 +290,7 @@ export default function Inflows({ user, inputElement }) {
                               placeholder="New name for this category"
                               ref={inputElement}
                               value={userInputValue}
-                              onChange={(e) => handleInputChange(e)}
+                              onChange={(e) => helpers.handleInputChange(e)}
                             />
                             {popoverError && (
                               <div className="text-sm text-red-500">
@@ -354,7 +310,7 @@ export default function Inflows({ user, inputElement }) {
                               <div className="flex">
                                 <button
                                   type="button"
-                                  onClick={() => resetPopover()}
+                                  onClick={() => helpers.resetPopover()}
                                   className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                                 >
                                   Cancel
@@ -376,8 +332,8 @@ export default function Inflows({ user, inputElement }) {
                       className="pl-2 flex hover:text-gray-600"
                       onClick={() =>
                         openPopover === 'inflow_' + inflow.inflowName
-                          ? resetPopover()
-                          : prepareEdit('inflow_', inflow.inflowName)
+                          ? helpers.resetPopover()
+                          : helpers.prepareEdit('inflow_', inflow.inflowName)
                       }
                     >
                       {inflow.inflowName}
@@ -395,13 +351,13 @@ export default function Inflows({ user, inputElement }) {
                     size="10"
                     type="text"
                     onClick={() =>
-                      prepareAmountEdit(
+                      helpers.prepareAmountEdit(
                         'inflowAmount',
                         inflow.inflowName,
                         inflow.amount
                       )
                     }
-                    onChange={(e) => handleAmountChange(e)}
+                    onChange={(e) => helpers.handleAmountChange(e)}
                     onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
                     spellCheck="false"
                     autoComplete="false"

@@ -84,40 +84,45 @@ export default function Charts({ expenses }) {
     }
   }
 
+  // rebuid charts on every expense change
   useEffect(() => {
     pieBuilder(expenses);
   }, [expenses]);
 
   return (
-    <div>
-      {drawPieExpenses ? (
-        <div className="grid justify-items-center pt-8">
-          <div className="mb-2 text-sm">By expense</div>
-          <Pie data={pieDataExpenses} legend={{ position: 'bottom' }} />
-        </div>
-      ) : (
-        <div className="flex justify-center items-end pt-8">
-          <ChartPieIcon className="w-6 h-6" />
-          <p className="italic text-gray-600">
-            You must enter at least two expenses to display the
-            <span className="text-black"> Expenses chart</span>.
-          </p>
-        </div>
-      )}
-      {drawPieCategories ? (
-        <div className="grid justify-items-center pt-8">
-          <div className="mb-2 text-sm">By category</div>
-          <Pie data={pieDataCategories} legend={{ position: 'bottom' }} />
-        </div>
-      ) : (
-        <div className="flex justify-center items-end pt-8">
-          <ChartPieIcon className="w-6 h-6" />
-          <p className="italic text-gray-600">
-            You must enter expenses in at least two categories to display the
-            <span className="text-black"> Categories chart</span>.
-          </p>
-        </div>
-      )}
+    <div id="charts-wrapper" className="">
+      <div>
+        {drawPieExpenses ? (
+          <div className="grid justify-items-center pt-8">
+            <div className="mb-2 text-sm">By expense</div>
+            <Pie data={pieDataExpenses} legend={{ position: 'bottom' }} />
+          </div>
+        ) : (
+          <div className="flex justify-center items-end pt-8">
+            <ChartPieIcon className="w-6 h-6" />
+            <p className="italic text-gray-600">
+              You must enter at least two expenses to display the
+              <span className="text-black"> Expenses chart</span>.
+            </p>
+          </div>
+        )}
+      </div>
+      <div>
+        {drawPieCategories ? (
+          <div className="grid justify-items-center pt-8">
+            <div className="mb-2 text-sm">By category</div>
+            <Pie data={pieDataCategories} legend={{ position: 'bottom' }} />
+          </div>
+        ) : (
+          <div className="flex justify-center items-end pt-8">
+            <ChartPieIcon className="w-6 h-6" />
+            <p className="italic text-gray-600">
+              You must enter expenses in at least two categories to display the
+              <span className="text-black"> Categories chart</span>.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
