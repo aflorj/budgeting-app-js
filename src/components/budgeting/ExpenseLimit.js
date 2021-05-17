@@ -48,7 +48,7 @@ export default function ExpenseLimit({ expenseObject, categoryName, helpers }) {
       if (
         expenseObject.limitAmount !== parseFloat(userAmountValue) &&
         !isNaN(userAmountValue) &&
-        parseFloat(userAmountValue) > 0
+        parseFloat(userAmountValue) >= 0
       ) {
         // apply the changes to the atom
         // copy of the array of the expenses in the category the edited expense belongs to
@@ -104,7 +104,9 @@ export default function ExpenseLimit({ expenseObject, categoryName, helpers }) {
           }
         />
       </form>
-      {expenseObject.limitAmount > 0 && preferences.currency}
+      {expenseObject.limitAmount > 0 &&
+        preferences.displaySymbol &&
+        preferences.currency}
     </div>
   );
 }

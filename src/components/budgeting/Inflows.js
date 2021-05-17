@@ -172,7 +172,7 @@ export default function Inflows({
       if (
         inflow.amount !== parseFloat(userAmountValue) &&
         !isNaN(userAmountValue) &&
-        parseFloat(userAmountValue) > 0
+        parseFloat(userAmountValue) >= 0
       ) {
         // apply the changes to the atom
         inflowsArrayCopy[indexOfInflow].amount = parseFloat(userAmountValue);
@@ -360,7 +360,7 @@ export default function Inflows({
                     onChange={(e) => helpers.handleAmountChange(e)}
                     onBlur={(e) => handleInflowAmountSubmit(e, inflow)}
                     spellCheck="false"
-                    autoComplete="false"
+                    autoComplete="off"
                     value={
                       openPopover === 'inflowAmount_' + inflow.inflowName
                         ? userAmountValue
@@ -371,7 +371,7 @@ export default function Inflows({
                     }
                   />
                 </form>
-                {preferences.currency}
+                {preferences.displaySymbol && preferences.currency}
               </div>
             </div>
           ))

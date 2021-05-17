@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { db } from '../../firebase';
-import { DEFAULT_CATEGORIES } from '../../constants';
+import { DEFAULT_CATEGORIES, DEFAULT_PREFERENCES } from '../../constants';
 import Loading from './Loading';
 import Charts from './Charts';
 import BudgetInfo from './BudgetInfo';
@@ -15,6 +15,7 @@ import {
   userInputValueAtom,
   userAmountValueAtom,
   popoverErrorAtom,
+  preferencesAtom,
 } from '../../utils/atoms';
 
 // TODO dealing with recurring data, adding saving/purchase goals
@@ -36,6 +37,9 @@ export default function Main({ user }) {
   // holds the name and the amount of the inflow/category/expense/limit being edited
   const setUserInputValue = useSetRecoilState(userInputValueAtom);
   const setUserAmountValue = useSetRecoilState(userAmountValueAtom);
+
+  // user's preferences
+  const [preferences, setPreferences] = useRecoilState(preferencesAtom);
 
   // focus ref
   const inputElement = useRef(null);
@@ -67,6 +71,10 @@ export default function Main({ user }) {
       );
   }, [budgetData.expenses]);
 
+  useEffect(() => {
+    docRefPreferences.set({ ...preferences }, { merge: true });
+  }, [preferences]);
+
   // firestore documents references
   const dbRefUser = db.collection('usersdb').doc(user.uid);
   const docRefRecurringData = dbRefUser
@@ -75,6 +83,9 @@ export default function Main({ user }) {
   const docRefCurrentMonth = dbRefUser
     .collection('budgetsByMonth')
     .doc(displayedBudget.year + '_' + displayedBudget.month);
+  const docRefPreferences = dbRefUser
+    .collection('recurringData')
+    .doc('preferences');
 
   const helpers = {
     // prepares the category, expense or inflow edit popover
@@ -135,6 +146,18 @@ export default function Main({ user }) {
               if (doc.exists) {
                 // NORMAL LOGIN
 
+                docRefPreferences
+                  .get()
+                  .then((doc) => {
+                    // set user's preferences to their saved preferences
+                    setPreferences(doc.data());
+                  })
+                  .catch((error) => {
+                    console.log(
+                      'Error getting the preferences document:',
+                      error
+                    );
+                  });
                 // set local state with the data from the user's current month document
                 setBudgetData(doc.data());
 
@@ -142,6 +165,19 @@ export default function Main({ user }) {
                 setLoading(false);
               } else {
                 // FIRST LOGIN THIS MONTH
+
+                docRefPreferences
+                  .get()
+                  .then((doc) => {
+                    // set user's preferences to their saved preferences
+                    setPreferences(doc.data());
+                  })
+                  .catch((error) => {
+                    console.log(
+                      'Error getting the preferences document:',
+                      error
+                    );
+                  });
 
                 // create a new document for this month, based on the user's recurring data
                 docRefRecurringData
@@ -164,7 +200,10 @@ export default function Main({ user }) {
         } else {
           // NEW USER
 
-          // set atom to a default default preset
+          // set preferences atom to a default preset
+          setPreferences(DEFAULT_PREFERENCES);
+
+          // set budgetData atom to a default preset
           setBudgetData({
             expenses: DEFAULT_CATEGORIES,
             inflows: [],

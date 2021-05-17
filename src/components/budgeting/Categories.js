@@ -520,7 +520,8 @@ export default function Categories({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}
-                              {preferences.currency}
+                              {preferences.displaySymbol &&
+                                preferences.currency}
                             </div>
                           )}
                       </div>
@@ -532,7 +533,7 @@ export default function Categories({
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
-                      {preferences.currency}
+                      {preferences.displaySymbol && preferences.currency}
                     </div>
                   </div>
                   <CategoryLimit category={el} helpers={helpers} />

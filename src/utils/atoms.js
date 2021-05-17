@@ -5,9 +5,7 @@ const currentMonth = date.getMonth();
 
 export const preferencesAtom = atom({
   key: 'preferencesAtom',
-  default: {
-    currency: '€',
-  },
+  default: {},
 });
 
 export const loadingAtom = atom({

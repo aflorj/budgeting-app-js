@@ -39,14 +39,13 @@ export default function CategoryLimit({ category, helpers }) {
       if (
         category.categoryLimitAmount !== parseFloat(userAmountValue) &&
         !isNaN(userAmountValue) &&
-        parseFloat(userAmountValue) > 0
+        parseFloat(userAmountValue) >= 0
       ) {
         // apply the changes to the atom
         // copy of the array of the expenses in the category the edited category belongs to
         let expensesArrayCopy = cloneDeep(budgetData.expenses);
-        expensesArrayCopy[indexOfCategory].categoryLimitAmount = parseFloat(
-          userAmountValue
-        );
+        expensesArrayCopy[indexOfCategory].categoryLimitAmount =
+          parseFloat(userAmountValue);
         setBudgetData((budgetData) => ({
           ...budgetData,
           expenses: expensesArrayCopy,
@@ -89,7 +88,9 @@ export default function CategoryLimit({ category, helpers }) {
           }
         />
       </form>
-      {category.categoryLimitAmount > 0 && preferences.currency}
+      {category.categoryLimitAmount > 0 &&
+        preferences.displaySymbol &&
+        preferences.currency}
     </div>
   );
 }

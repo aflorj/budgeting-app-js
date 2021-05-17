@@ -133,7 +133,7 @@ export default function BudgetInfo() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}{' '}
-        {preferences.currency}
+        {preferences.displaySymbol && preferences.currency}
         <br />
         <p className="font-normal">to be budgeted</p>
       </div>
@@ -144,10 +144,11 @@ export default function BudgetInfo() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-          {preferences.currency} Funds for {MONTHS[displayedBudget.month]}
+          {preferences.displaySymbol && preferences.currency} Funds for{' '}
+          {MONTHS[displayedBudget.month]}
         </p>
         <p>
-          -0.00€ Overspent in{' '}
+          -0.00{preferences.displaySymbol && preferences.currency} Overspent in{' '}
           {MONTHS[displayedBudget.month === 0 ? 11 : displayedBudget.month - 1]}
         </p>
         <p>
@@ -156,9 +157,13 @@ export default function BudgetInfo() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-          {preferences.currency} Budgeted in {MONTHS[displayedBudget.month]}
+          {preferences.displaySymbol && preferences.currency} Budgeted in{' '}
+          {MONTHS[displayedBudget.month]}
         </p>
-        <p>-0.00€ Budgeted in Future</p>
+        <p>
+          -0.00{preferences.displaySymbol && preferences.currency} Budgeted in
+          Future
+        </p>
       </div>
     </div>
   );

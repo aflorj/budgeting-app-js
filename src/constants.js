@@ -68,3 +68,8 @@ export const DEFAULT_CATEGORIES = [
     ],
   },
 ];
+
+export const DEFAULT_PREFERENCES = {
+  displaySymbol: true,
+  currency: '€',
+};

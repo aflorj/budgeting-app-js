@@ -14,7 +14,7 @@ export default function Budgeting() {
 
   return (
     <div className="flex flex-col bg-gray-200 min-h-screen">
-      <Header user={currentUser} logout={handleLogout} />
+      <Header user={currentUser} logout={handleLogout} back={false} />
       <Main user={currentUser} />
     </div>
   );

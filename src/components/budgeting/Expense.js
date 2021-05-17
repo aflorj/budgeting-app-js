@@ -156,7 +156,7 @@ export default function Expense({
       if (
         expenseObject.amount !== parseFloat(userAmountValue) &&
         !isNaN(userAmountValue) &&
-        parseFloat(userAmountValue) > 0
+        parseFloat(userAmountValue) >= 0
       ) {
         // apply the changes to the atom
         // copy of the array of the expenses in the category the edited expense belongs to
@@ -320,7 +320,7 @@ export default function Expense({
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
-                  {preferences.currency}
+                  {preferences.displaySymbol && preferences.currency}
                 </div>
               )}
           </div>
@@ -356,7 +356,7 @@ export default function Expense({
               }
             />
           </form>
-          {preferences.currency}
+          {preferences.displaySymbol && preferences.currency}
         </div>
         {/* do tu objamemo prvi input */}
       </div>
