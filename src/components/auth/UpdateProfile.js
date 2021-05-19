@@ -5,7 +5,7 @@ import InfoAlert from './InfoAlert';
 import { useHistory } from 'react-router-dom';
 import Header from '../budgeting/Header';
 import { useRecoilState } from 'recoil';
-import { preferencesAtom } from '../../utils/atoms';
+import { preferencesAtom, loadingAtom } from '../../utils/atoms';
 import Switch from 'react-switch';
 
 export default function UpdateProfile() {
@@ -15,7 +15,7 @@ export default function UpdateProfile() {
   const { currentUser, updatePassword, updateEmail, logout } = useAuth();
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useRecoilState(loadingAtom);
   const history = useHistory();
   const [preferences, setPreferences] = useRecoilState(preferencesAtom);
 
@@ -38,11 +38,9 @@ export default function UpdateProfile() {
 
     Promise.all(promises)
       .then(() => {
-        setError('');
         setMessage('Email/password successfully updated');
       })
       .catch(() => {
-        setMessage('');
         setError('Failed to update the account');
       })
       .finally(() => {
@@ -68,11 +66,6 @@ export default function UpdateProfile() {
     }));
   };
 
-  function clearError() {
-    if (error) {
-      setError('');
-    }
-  }
   return (
     <div className="flex flex-col h-screen bg-gray-200">
       <Header user={currentUser} logout={handleLogout} back={true} />
