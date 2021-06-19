@@ -189,7 +189,9 @@ export default function Inflows({
   return (
     <div id="all-inflows-wrapper" className="flex flex-col">
       <div className="flex items-center">
-        <p className="text-xl font-bold underline">Inflows</p>
+        <p className="text-xl font-bold underline dark:text-gray-200">
+          Inflows
+        </p>
         {/* add in inflow popover - start */}
         <Popover
           isOpen={openPopover === 'inflow'}
@@ -242,7 +244,7 @@ export default function Inflows({
         >
           <div className="inline-block">
             <button
-              className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
+              className="focus:outline-white border-2 border-green-300 dark:border-gray-100 bg-gray-100 dark:bg-blue-300 hover:bg-green-300 dark:hover:bg-blue-400 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-75 hover:opacity-100 transform transition hover:scale-125 dark:text-black"
               onClick={() =>
                 openPopover === 'inflow'
                   ? helpers.resetPopover()
@@ -329,7 +331,7 @@ export default function Inflows({
                     )}
                   >
                     <div
-                      className="pl-2 flex hover:text-gray-600"
+                      className="pl-2 flex hover:text-gray-600 dark:hover:text-gray-400"
                       onClick={() =>
                         openPopover === 'inflow_' + inflow.inflowName
                           ? helpers.resetPopover()
@@ -345,7 +347,7 @@ export default function Inflows({
               <div className="px-1 flex">
                 <form onSubmit={(e) => handleInflowAmountSubmit(e, inflow)}>
                   <input
-                    className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+                    className="text-right bg-gray-100 dark:bg-gray-700 cursor-pointer focus:bg-white hover:text-gray-600 dark:hover:text-gray-400"
                     id="inflow-amount"
                     key={inflow.inflowName}
                     size="10"

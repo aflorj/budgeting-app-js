@@ -60,7 +60,7 @@ export default function CategoryLimit({ category, helpers }) {
     <div className="px-1 flex">
       <form onSubmit={(e) => handleCategoryLimitSubmit(e, category)}>
         <input
-          className="text-right bg-green-100 cursor-pointer focus:bg-white hover:text-gray-600"
+          className="text-right bg-green-100 dark:bg-green-300 cursor-pointer focus:bg-white hover:text-gray-600 dark:hover:text-gray-500"
           id="category-limit-amount"
           size="10"
           key={'categoryLimit_' + category.categoryName}

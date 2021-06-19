@@ -70,6 +70,7 @@ export const DEFAULT_CATEGORIES = [
 ];
 
 export const DEFAULT_PREFERENCES = {
+  darkTheme: false,
   displaySymbol: true,
   currency: '€',
 };

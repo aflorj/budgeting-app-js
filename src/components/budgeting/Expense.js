@@ -178,7 +178,7 @@ export default function Expense({
   return (
     <div
       // border before hover is the same color as background
-      className="border-b-2 border-gray-100 hover:border-gray-400 pl-2 flex justify-between"
+      className="border-b-2 border-gray-100 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-400 pl-2 flex justify-between"
       id="expense-line"
       key={expenseObject.expense}
     >
@@ -262,7 +262,7 @@ export default function Expense({
               )}
             >
               <div
-                className="pl-2 flex hover:text-gray-600"
+                className="pl-2 flex hover:text-gray-600 dark:hover:text-gray-400"
                 id="expense-name"
                 onClick={() =>
                   openPopover === 'expense_' + expenseObject.expense
@@ -330,7 +330,7 @@ export default function Expense({
             onSubmit={(e) => handleAmountSubmit(e, categoryName, expenseObject)}
           >
             <input
-              className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+              className="text-right bg-gray-100 dark:bg-gray-600 cursor-pointer focus:bg-white hover:text-gray-600 dark:hover:text-gray-400"
               id="amount"
               size="10"
               key={expenseObject.expense}

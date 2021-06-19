@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LogoutIcon,
@@ -29,8 +29,8 @@ export default function Header({ user, logout, back }) {
           </>
         )}
       </div>
-      <div className="flex space-x-4 items-center">
-        <div className="flex bg-gray-100 p-2 rounded-lg">
+      <div className="space-x-4 items-center flex">
+        <div className="bg-gray-100 dark:bg-gray-500 p-2 rounded-lg hidden md:flex dark:text-gray-100">
           <UserIcon className="h-6 w-6" />
           <div>{user.email}</div>
         </div>

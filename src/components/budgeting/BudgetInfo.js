@@ -16,9 +16,8 @@ const currentMonth = date.getMonth();
 export default function BudgetInfo() {
   const budgetData = useRecoilValue(budgetDataAtom);
   const setLoading = useSetRecoilState(loadingAtom);
-  const [displayedBudget, setDisplayedBudget] = useRecoilState(
-    displayedBudgetAtom
-  );
+  const [displayedBudget, setDisplayedBudget] =
+    useRecoilState(displayedBudgetAtom);
   const preferences = useRecoilValue(preferencesAtom);
 
   function calculateBudget() {
@@ -106,7 +105,7 @@ export default function BudgetInfo() {
 
   return (
     <div className="bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
-      <div className="ml-20 flex items-center">
+      <div className="ml-4 md:ml-8 lg:ml-20 flex items-center">
         {conditionPrevious() && (
           <ChevronLeftIcon
             className="h-8 w-8 cursor-pointer transform transition hover:scale-125 opacity-50 hover:opacity-100"
@@ -114,10 +113,11 @@ export default function BudgetInfo() {
           />
         )}
         <div className="flex-col">
-          <div>Your budget for</div>
+          <div className="hidden lg:block">Your budget for</div>
           <div className="flex justify-center">
-            <p className="font-bold text-xl">
-              {MONTHS[displayedBudget.month]} {displayedBudget.year}
+            <p className="font-bold text-xl flex flex-col justify-center lg:flex-row lg:space-x-1">
+              <div>{MONTHS[displayedBudget.month]}</div>
+              <div>{displayedBudget.year}</div>
             </p>
           </div>
         </div>
@@ -128,14 +128,17 @@ export default function BudgetInfo() {
           />
         )}
       </div>
-      <div className="font-extrabold text-white p-5 ml-40 bg-green-400 rounded-md">
-        {calculateToBeBudgeted().toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{' '}
-        {preferences.displaySymbol && preferences.currency}
-        <br />
-        <p className="font-normal">to be budgeted</p>
+      <div className="flex flex-col text-white p-5 ml-4 md:ml-20 lg:ml-40 bg-green-400 dark:bg-green-500 rounded-md">
+        <div className="font-extrabold">
+          <span>
+            {calculateToBeBudgeted().toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+          <span>{preferences.displaySymbol && preferences.currency}</span>
+        </div>
+        <p>to be budgeted</p>
       </div>
       <div className="flex flex-col text-sm ml-2">
         <p>

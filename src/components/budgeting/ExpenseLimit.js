@@ -74,7 +74,7 @@ export default function ExpenseLimit({ expenseObject, categoryName, helpers }) {
         }
       >
         <input
-          className="text-right bg-gray-100 cursor-pointer focus:bg-white hover:text-gray-600"
+          className="text-right bg-gray-100 dark:bg-gray-600 cursor-pointer focus:bg-white hover:text-gray-600 dark:hover:text-gray-400"
           id="limit-amount"
           size="10"
           key={expenseObject.expense}

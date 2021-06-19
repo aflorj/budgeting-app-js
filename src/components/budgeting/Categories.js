@@ -279,7 +279,7 @@ export default function Categories({
           )}
         >
           <button
-            className="focus:outline-white inline-block px-1 border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-md cursor-pointer text-sm"
+            className="focus:outline-white inline-block px-1 border-2 border-green-300 dark:border-gray-100 bg-gray-100 dark:bg-blue-300 hover:bg-green-300 dark:hover:bg-blue-400 rounded-md cursor-pointer text-sm dark:text-black"
             onClick={() =>
               openPopover === 'addCategory'
                 ? setOpenPopover(false)
@@ -296,7 +296,7 @@ export default function Categories({
         {budgetData.expenses.length ? (
           budgetData.expenses.map((el) => (
             <div
-              className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200"
+              className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200 dark:border-green-300 mr-4 dark:bg-gray-600"
               id="each-category-wrapped"
               key={el.categoryName}
             >
@@ -366,7 +366,7 @@ export default function Categories({
                 )}
               >
                 <div
-                  className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1"
+                  className="cursor-pointer capitalize font-bold bg-blue-100 hover:bg-blue-300 inline-block border-2 border-blue-300 rounded-md px-1 text-black"
                   onClick={() =>
                     openPopover === 'category_' + el.categoryName
                       ? helpers.resetPopover()
@@ -435,7 +435,7 @@ export default function Categories({
               >
                 <div className="inline-block">
                   <button
-                    className="focus:outline-white border-2 border-green-300 bg-gray-100 hover:bg-green-300 rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-50 hover:opacity-100 transform transition hover:scale-125"
+                    className="focus:outline-white border-2 border-green-300 dark:border-gray-100 bg-gray-100 dark:bg-blue-300 hover:bg-green-300  dark:hover:bg-blue-400  rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-75 hover:opacity-100 transform transition hover:scale-125 dark:text-black"
                     onClick={() =>
                       openPopover === 'addExpense_' + el.categoryName
                         ? helpers.resetPopover()
@@ -464,7 +464,7 @@ export default function Categories({
                 </div>
               )}
               {el.expensesInCategory.length > 0 && (
-                <div className="flex justify-between border-t-2 pl-2 bg-green-100 rounded-lg">
+                <div className="flex justify-between border-t-2 pl-2 bg-green-100 dark:bg-green-300 rounded-lg dark:text-gray-900">
                   <div className="flex justify-between w-4/5">
                     <div className="flex justify-between w-7/12">
                       <div className="pl-2"></div>

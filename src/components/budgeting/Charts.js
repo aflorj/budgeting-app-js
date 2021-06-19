@@ -90,35 +90,43 @@ export default function Charts({ expenses }) {
   }, [expenses]);
 
   return (
-    <div id="charts-wrapper" className="">
-      <div>
+    <div id="charts-wrapper" className="flex flex-col md:flex-row lg:flex-col">
+      <div className="w-auto md:w-1/2 lg:w-full">
         {drawPieExpenses ? (
           <div className="grid justify-items-center pt-8">
-            <div className="mb-2 text-sm">By expense</div>
+            <div className="mb-2">By expense</div>
             <Pie data={pieDataExpenses} legend={{ position: 'bottom' }} />
           </div>
         ) : (
           <div className="flex justify-center items-end pt-8">
             <ChartPieIcon className="w-6 h-6" />
-            <p className="italic text-gray-600">
+            <p className="italic text-gray-600 dark:text-gray-200">
               You must enter at least two expenses to display the
-              <span className="text-black"> Expenses chart</span>.
+              <span className="text-black dark:text-gray-400">
+                {' '}
+                Expenses chart
+              </span>
+              .
             </p>
           </div>
         )}
       </div>
-      <div>
+      <div className="w-auto md:w-1/2 lg:w-full">
         {drawPieCategories ? (
-          <div className="grid justify-items-center pt-8">
-            <div className="mb-2 text-sm">By category</div>
+          <div className="grid justify-items-center pt-8 max-w-screen">
+            <div className="mb-2">By category</div>
             <Pie data={pieDataCategories} legend={{ position: 'bottom' }} />
           </div>
         ) : (
           <div className="flex justify-center items-end pt-8">
             <ChartPieIcon className="w-6 h-6" />
-            <p className="italic text-gray-600">
+            <p className="italic text-gray-600 dark:text-gray-200">
               You must enter expenses in at least two categories to display the
-              <span className="text-black"> Categories chart</span>.
+              <span className="text-black dark:text-gray-400">
+                {' '}
+                Categories chart
+              </span>
+              .
             </p>
           </div>
         )}

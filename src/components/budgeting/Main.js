@@ -284,10 +284,10 @@ export default function Main({ user }) {
   return loading ? (
     <Loading />
   ) : (
-    <div className="bg-gray-100 p-2 flex flex-col mt-4 mb-8 mx-8 rounded-lg shadow-lg min-h-full">
+    <div className="bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
       <BudgetInfo />
-      <div className="flex flex-row">
-        <div className="overflow-y-auto m-2 flex-col space-y-2 w-1/2">
+      <div className="flex flex-col lg:flex-row dark:text-gray-100">
+        <div className="overflow-y-auto m-2 flex-col space-y-2 w-full lg:w-1/2">
           <Inflows
             inputElement={inputElement}
             helpers={helpers}
@@ -299,7 +299,7 @@ export default function Main({ user }) {
             docRefRecurringData={docRefRecurringData}
           />
         </div>
-        <div className="w-1/2 m-2">
+        <div className="w-full lg:w-1/2 m-2">
           <Charts expenses={budgetData.expenses} />
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function ForgotPassword() {
   return (
     <LandingPage
       content={
-        <>
+        <div className="h-screen md:h-auto">
           <div className="">
             <p className="text-center text-3xl">Reset your password</p>
             <form
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
             </div>
           </div>
           <Legal />
-        </>
+        </div>
       }
     />
   );

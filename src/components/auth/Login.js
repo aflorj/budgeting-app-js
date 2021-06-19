@@ -36,8 +36,8 @@ export default function Login() {
               Log in to your account
             </p>
             <div className="flex md:block justify-between items-center">
-              <Link to="/signup" className="block md:hidden pl-4">
-                Create an account
+              <Link to="/signup" className="block md:hidden pl-1">
+                Sign up
               </Link>
               <form
                 className="flex flex-row md:flex-col md:pt-8"
