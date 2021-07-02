@@ -7,6 +7,9 @@ import Header from '../budgeting/Header';
 import { useRecoilState } from 'recoil';
 import { preferencesAtom, loadingAtom } from '../../utils/atoms';
 import Switch from 'react-switch';
+import { useTranslation } from 'react-i18next';
+import { AVAILABLE_LANGUAGES } from '../../constants';
+import { Trans } from 'react-i18next';
 
 export default function UpdateProfile() {
   const emailRef = useRef();
@@ -18,6 +21,9 @@ export default function UpdateProfile() {
   const [loading, setLoading] = useRecoilState(loadingAtom);
   const history = useHistory();
   const [preferences, setPreferences] = useRecoilState(preferencesAtom);
+
+  const { i18n } = useTranslation();
+  const selectedLang = i18n.language;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -79,10 +85,14 @@ export default function UpdateProfile() {
         <Header user={currentUser} logout={handleLogout} back={true} />
         <div className="bg-gray-100 dark:bg-gray-300 p-4 flex flex-col mt-4 mx-auto rounded-lg shadow-lg w:7/8 md:w-1/2 lg:w-2/5 xl:1/3 space-y-8">
           <div className="flex flex-col items-center">
-            <p className="font-bold text-xl mb-4">Preferences</p>
+            <p className="font-bold text-xl mb-4">
+              <Trans>Preferences</Trans>
+            </p>
             <div className="w-full px-14 space-y-2">
               <div className="flex justify-between">
-                <p className="">Dark theme</p>
+                <p className="">
+                  <Trans>Dark theme</Trans>
+                </p>
                 <div>
                   <Switch
                     onChange={handleThemeChange}
@@ -100,32 +110,30 @@ export default function UpdateProfile() {
                 </div>
               </div>
               <div className="flex justify-between">
-                <p>Language</p>
+                <p>
+                  <Trans>Language</Trans>
+                </p>
                 <div className="border-2 border-green-200 dark:border-green-400 rounded-lg space-x-2">
-                  <button
-                    className={`${
-                      preferences.currency === '€'
-                        ? 'opacity-100 bg-green-200 dark:bg-green-400'
-                        : 'opacity-70 hover:opacity-100'
-                    } cursor-pointer px-2`}
-                    onClick={() => console.log('todo')}
-                  >
-                    EN
-                  </button>
-                  <button
-                    className={`${
-                      preferences.currency === '$'
-                        ? 'opacity-100 bg-green-200 dark:bg-green-400'
-                        : 'opacity-70 hover:opacity-100'
-                    } cursor-pointer px-2`}
-                    onClick={() => console.log('todo')}
-                  >
-                    SI
-                  </button>
+                  {AVAILABLE_LANGUAGES.map((lang) => (
+                    <button
+                      className={`${
+                        selectedLang === lang
+                          ? 'opacity-100 bg-green-200 dark:bg-green-400'
+                          : 'opacity-70 hover:opacity-100'
+                      } cursor-pointer px-2`}
+                      onClick={() => {
+                        i18n.changeLanguage(lang);
+                      }}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="flex justify-between">
-                <p className="">Display currency symbol</p>
+                <p className="">
+                  <Trans>Display currency</Trans>
+                </p>
                 <div>
                   <Switch
                     onChange={handleDisplaySymbolChange}
@@ -143,7 +151,9 @@ export default function UpdateProfile() {
                 </div>
               </div>
               <div className="flex justify-between">
-                <p>Currency</p>
+                <p>
+                  <Trans>Currency</Trans>
+                </p>
                 <div className="border-2 border-green-200 dark:border-green-400 rounded-lg space-x-2">
                   <button
                     className={`${
@@ -171,7 +181,7 @@ export default function UpdateProfile() {
           </div>
           <div className="flex flex-col items-center">
             <p className="font-bold text-xl border-t-2 pt-4 mb-4">
-              Account settings
+              <Trans>Account settings</Trans>
             </p>
             <form
               className="flex flex-col items-center space-y-4"
@@ -193,7 +203,7 @@ export default function UpdateProfile() {
               </div>
               <div className="w-full">
                 <label htmlFor="password" className="font-medium">
-                  New Password
+                  <Trans>New password</Trans>
                 </label>
                 <input
                   type="password"
@@ -204,7 +214,7 @@ export default function UpdateProfile() {
               </div>
               <div className="w-full">
                 <label htmlFor="password" className="font-medium">
-                  Confirm New Password
+                  <Trans>Confirm new password</Trans>
                 </label>
                 <input
                   type="password"
@@ -220,7 +230,7 @@ export default function UpdateProfile() {
                 type="submit"
                 className="p-2 border-2 rounded-lg bg-green-200 hover:bg-green-300 dark:bg-green-400 dark:hover:bg-green-500"
               >
-                Update email/password
+                <Trans>Update email/password</Trans>
               </button>
             </form>
           </div>

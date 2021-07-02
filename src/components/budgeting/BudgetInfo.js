@@ -8,6 +8,7 @@ import {
   loadingAtom,
   preferencesAtom,
 } from '../../utils/atoms';
+import { Trans } from 'react-i18next';
 
 const date = new Date();
 const currentYear = date.getFullYear();
@@ -113,10 +114,14 @@ export default function BudgetInfo() {
           />
         )}
         <div className="flex-col">
-          <div className="hidden lg:block">Your budget for</div>
+          <div className="hidden lg:block">
+            <Trans>Your budget for</Trans>
+          </div>
           <div className="flex justify-center">
             <p className="font-bold text-xl flex flex-col justify-center lg:flex-row lg:space-x-1">
-              <div>{MONTHS[displayedBudget.month]}</div>
+              <div>
+                <Trans>{MONTHS[displayedBudget.month]}</Trans>
+              </div>
               <div>{displayedBudget.year}</div>
             </p>
           </div>
@@ -138,7 +143,9 @@ export default function BudgetInfo() {
           </span>
           <span>{preferences.displaySymbol && preferences.currency}</span>
         </div>
-        <p>to be budgeted</p>
+        <p>
+          <Trans>to be budgeted</Trans>
+        </p>
       </div>
       <div className="flex flex-col text-sm ml-2">
         <p>
@@ -147,12 +154,20 @@ export default function BudgetInfo() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-          {preferences.displaySymbol && preferences.currency} Funds for{' '}
-          {MONTHS[displayedBudget.month]}
+          {preferences.displaySymbol && preferences.currency}
+          <Trans> Funds for </Trans>
+          <Trans>{MONTHS[displayedBudget.month]}</Trans>
         </p>
         <p>
-          -0.00{preferences.displaySymbol && preferences.currency} Overspent in{' '}
-          {MONTHS[displayedBudget.month === 0 ? 11 : displayedBudget.month - 1]}
+          -0.00{preferences.displaySymbol && preferences.currency}
+          <Trans> Overspent in </Trans>
+          <Trans>
+            {
+              MONTHS[
+                displayedBudget.month === 0 ? 11 : displayedBudget.month - 1
+              ]
+            }
+          </Trans>
         </p>
         <p>
           -
@@ -160,12 +175,13 @@ export default function BudgetInfo() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-          {preferences.displaySymbol && preferences.currency} Budgeted in{' '}
-          {MONTHS[displayedBudget.month]}
+          {preferences.displaySymbol && preferences.currency}
+          <Trans> Budgeted in </Trans>
+          <Trans>{MONTHS[displayedBudget.month]}</Trans>
         </p>
         <p>
-          -0.00{preferences.displaySymbol && preferences.currency} Budgeted in
-          Future
+          -0.00{preferences.displaySymbol && preferences.currency}
+          <Trans> Budgeted in Future</Trans>
         </p>
       </div>
     </div>

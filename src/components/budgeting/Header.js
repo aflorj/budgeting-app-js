@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   LogoutIcon,
@@ -7,6 +7,7 @@ import {
   CalculatorIcon,
   ArrowCircleLeftIcon,
 } from '@heroicons/react/outline';
+import { Trans } from 'react-i18next';
 
 // TODO replace the calculator with the actual logo
 export default function Header({ user, logout, back }) {
@@ -19,13 +20,15 @@ export default function Header({ user, logout, back }) {
               <ArrowCircleLeftIcon className="h-8 w-8" />
             </Link>
             <Link to="/">
-              <p className="font-bold">Back to your budget</p>
+              <p className="font-bold">
+                <Trans>Back to your budget</Trans>
+              </p>
             </Link>
           </>
         ) : (
           <>
             <CalculatorIcon className="h-8 w-8" />
-            <p className="font-bold">Budgetbud</p>
+            <p className="font-bold">Budgetko</p>
           </>
         )}
       </div>

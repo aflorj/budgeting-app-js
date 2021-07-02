@@ -13,12 +13,14 @@ import {
   preferencesAtom,
 } from '../../utils/atoms';
 import CategoryLimit from './CategoryLimit';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function Categories({
   inputElement,
   helpers,
   docRefRecurringData,
 }) {
+  const { t } = useTranslation();
   const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
@@ -227,7 +229,9 @@ export default function Categories({
   return (
     <div id="all-expenses-wrapper" className="">
       <div id="little-wrapper" className="flex space-x-1 items-end">
-        <p className="text-xl font-bold underline">Expenses</p>
+        <p className="text-xl font-bold underline">
+          <Trans>Expenses</Trans>
+        </p>
         {/* adding a category popover - start */}
         <Popover
           isOpen={openPopover === 'addCategory'}
@@ -248,7 +252,7 @@ export default function Categories({
                     className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
                     spellCheck="false"
                     autoComplete="off"
-                    placeholder="New Category"
+                    placeholder={t('New Category')}
                     maxLength="64"
                     type="text"
                     ref={inputElement}
@@ -256,7 +260,9 @@ export default function Categories({
                     onChange={(e) => helpers.handleInputChange(e)}
                   />
                   {popoverError && (
-                    <div className="text-sm text-red-500">{popoverError}</div>
+                    <div className="text-sm text-red-500">
+                      <Trans>{popoverError}</Trans>
+                    </div>
                   )}
                   <div className="pt-2 flex justify-end">
                     <button
@@ -264,13 +270,13 @@ export default function Categories({
                       onClick={() => helpers.resetPopover()}
                       className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                     >
-                      Cancel
+                      <Trans>Cancel</Trans>
                     </button>
                     <button
                       type="submit"
                       className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                     >
-                      OK
+                      <Trans>OK</Trans>
                     </button>
                   </div>
                 </form>
@@ -286,7 +292,7 @@ export default function Categories({
                 : setOpenPopover('addCategory')
             }
           >
-            + Category
+            <Trans>+ Category</Trans>
           </button>
         </Popover>
         {/* adding a category popover - end */}
@@ -326,14 +332,14 @@ export default function Categories({
                           autoComplete="off"
                           maxLength="64"
                           type="text"
-                          placeholder="New name for this category"
+                          placeholder={t('New name for this category')}
                           ref={inputElement}
                           value={userInputValue}
                           onChange={(e) => helpers.handleInputChange(e)}
                         />
                         {popoverError && (
                           <div className="text-sm text-red-500">
-                            {popoverError}
+                            <Trans>{popoverError}</Trans>
                           </div>
                         )}
                         <div className="pt-2 flex justify-between">
@@ -342,7 +348,7 @@ export default function Categories({
                             onClick={(e) => deleteCategory(e, el.categoryName)}
                             className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                           >
-                            Delete
+                            <Trans>Delete</Trans>
                           </button>
                           <div className="flex">
                             <button
@@ -350,13 +356,13 @@ export default function Categories({
                               onClick={() => helpers.resetPopover()}
                               className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                             >
-                              Cancel
+                              <Trans>Cancel</Trans>
                             </button>
                             <button
                               type="submit"
                               className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                             >
-                              OK
+                              <Trans>OK</Trans>
                             </button>
                           </div>
                         </div>
@@ -401,7 +407,7 @@ export default function Categories({
                           className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
                           spellCheck="false"
                           autoComplete="off"
-                          placeholder="New Expense"
+                          placeholder={t('New Expense')}
                           maxLength="64"
                           type="text"
                           ref={inputElement}
@@ -410,7 +416,7 @@ export default function Categories({
                         />
                         {popoverError && (
                           <div className="text-sm text-red-500">
-                            {popoverError}
+                            <Trans>{popoverError}</Trans>
                           </div>
                         )}
                         <div className="pt-2 flex justify-end">
@@ -419,13 +425,13 @@ export default function Categories({
                             onClick={() => helpers.resetPopover()}
                             className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                           >
-                            Cancel
+                            <Trans>Cancel</Trans>
                           </button>
                           <button
                             type="submit"
                             className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                           >
-                            OK
+                            <Trans>OK</Trans>
                           </button>
                         </div>
                       </form>
@@ -458,8 +464,8 @@ export default function Categories({
                 ))
               ) : (
                 <div>
-                  <p className="pl-2 italic text-gray-700">
-                    No expenses in this category.
+                  <p className="pl-2 italic text-gray-700 dark:text-gray-200">
+                    <Trans>No expenses in this category.</Trans>
                   </p>
                 </div>
               )}
@@ -543,8 +549,8 @@ export default function Categories({
           ))
         ) : (
           <div>
-            <p className="p-2 italic text-gray-700">
-              Start building your budget by creating a category.
+            <p className="p-2 italic text-gray-700 dark:text-gray-200">
+              <Trans>Start building your budget by creating a category.</Trans>
             </p>
           </div>
         )}

@@ -7,8 +7,10 @@ import {
   userAmountValueAtom,
   preferencesAtom,
 } from '../../utils/atoms';
+import { useTranslation } from 'react-i18next';
 
 export default function CategoryLimit({ category, helpers }) {
+  const { t } = useTranslation();
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [openPopover, setOpenPopover] = useRecoilState(openPopoverAtom);
   const userAmountValue = useRecoilValue(userAmountValueAtom);
@@ -84,7 +86,7 @@ export default function CategoryLimit({ category, helpers }) {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })
-              : 'Set limit'
+              : t('Set limit')
           }
         />
       </form>

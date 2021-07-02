@@ -4,8 +4,10 @@ import ErrorAlert from './ErrorAlert';
 import { Link, useHistory } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import Legal from './Legal';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function Login() {
+  const { t } = useTranslation();
   const emailRef = useRef();
   const passwordRef = useRef();
   const { login } = useAuth();
@@ -33,11 +35,11 @@ export default function Login() {
         <>
           <div className="">
             <p className="text-center text-3xl hidden md:block">
-              Log in to your account
+              <Trans>Log in to your account</Trans>
             </p>
             <div className="flex md:block justify-between items-center">
               <Link to="/signup" className="block md:hidden pl-1">
-                Sign up
+                <Trans>Sign up</Trans>
               </Link>
               <form
                 className="flex flex-row md:flex-col md:pt-8"
@@ -59,7 +61,7 @@ export default function Login() {
                     type="password"
                     id="password"
                     autoComplete="current-password"
-                    placeholder="password"
+                    placeholder={t('password')}
                     ref={passwordRef}
                     required
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 md:leading-relaxed md:text-lg focus:outline-none focus:placeholder-transparent focus:ring ring-green-300"
@@ -67,7 +69,7 @@ export default function Login() {
                 </div>
                 <div className="text-right pt-4 pb-12 hidden md:block">
                   <Link to="/forgot-password" className="underline">
-                    Forgot password?
+                    <Trans>Forgot password?</Trans>
                   </Link>
                   {error && <ErrorAlert error={error} />}
                 </div>
@@ -76,15 +78,15 @@ export default function Login() {
                   disabled={loading}
                   className="bg-green-400 text-white font-bold md:text-lg hover:bg-green-300 p-2 rounded-md"
                 >
-                  Log In
+                  <Trans>Log In</Trans>
                 </button>
               </form>
             </div>
             <div className="hidden md:block text-center pt-12 pb-12">
               <p>
-                Don't have an account yet?{' '}
+                <Trans>Don't have an account yet? </Trans>
                 <Link to="/signup" className="underline font-semibold">
-                  Sign up here
+                  <Trans>Sign up here</Trans>
                 </Link>
               </p>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trans } from 'react-i18next';
 
 export default function InfoAlert({ error }) {
   return (
@@ -21,7 +22,9 @@ export default function InfoAlert({ error }) {
           />
         </svg>
       </div>
-      <span>{error}</span>
+      <span>
+        <Trans>{error}</Trans>
+      </span>
     </div>
   );
 }

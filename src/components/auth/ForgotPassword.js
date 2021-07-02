@@ -5,6 +5,7 @@ import InfoAlert from './InfoAlert';
 import { Link } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import Legal from './Legal';
+import { Trans } from 'react-i18next';
 
 export default function ForgotPassword() {
   const emailRef = useRef();
@@ -33,7 +34,9 @@ export default function ForgotPassword() {
       content={
         <div className="h-screen md:h-auto">
           <div className="">
-            <p className="text-center text-3xl">Reset your password</p>
+            <p className="text-center text-3xl">
+              <Trans>Reset your password</Trans>
+            </p>
             <form
               className="flex flex-col pt-3 md:pt-8"
               onSubmit={handleSubmit}
@@ -60,17 +63,17 @@ export default function ForgotPassword() {
                 disabled={loading}
                 className="bg-green-400 text-white font-bold text-lg hover:bg-green-300 p-2 mt-2 rounded-md"
               >
-                Reset Password
+                <Trans>Reset Password</Trans>
               </button>
             </form>
             <div className="text-center pt-12 pb-12">
               <Link to="/login" className="underline font-semibold">
-                Log In
+                <Trans>Log In</Trans>
               </Link>
               <p>
-                Don't have an account yet?{' '}
+                <Trans>Don't have an account yet? </Trans>
                 <Link to="/signup" className="underline font-semibold">
-                  Sign up here
+                  <Trans>Sign up here</Trans>
                 </Link>
               </p>
             </div>

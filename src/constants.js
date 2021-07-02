@@ -74,3 +74,5 @@ export const DEFAULT_PREFERENCES = {
   displaySymbol: true,
   currency: '€',
 };
+
+export const AVAILABLE_LANGUAGES = ['en', 'si'];

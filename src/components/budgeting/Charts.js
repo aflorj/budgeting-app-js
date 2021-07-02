@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { ChartPieIcon } from '@heroicons/react/outline';
+import { Trans } from 'react-i18next';
 
 // TODO pie chart colors
 
@@ -94,17 +95,18 @@ export default function Charts({ expenses }) {
       <div className="w-auto md:w-1/2 lg:w-full">
         {drawPieExpenses ? (
           <div className="grid justify-items-center pt-8">
-            <div className="mb-2">By expense</div>
+            <div className="mb-2">
+              <Trans>By expense</Trans>
+            </div>
             <Pie data={pieDataExpenses} legend={{ position: 'bottom' }} />
           </div>
         ) : (
           <div className="flex justify-center items-end pt-8">
             <ChartPieIcon className="w-6 h-6" />
             <p className="italic text-gray-600 dark:text-gray-200">
-              You must enter at least two expenses to display the
+              <Trans>You must enter at least two expenses to display the</Trans>
               <span className="text-black dark:text-gray-400">
-                {' '}
-                Expenses chart
+                <Trans> Expenses chart</Trans>
               </span>
               .
             </p>
@@ -114,17 +116,21 @@ export default function Charts({ expenses }) {
       <div className="w-auto md:w-1/2 lg:w-full">
         {drawPieCategories ? (
           <div className="grid justify-items-center pt-8 max-w-screen">
-            <div className="mb-2">By category</div>
+            <div className="mb-2">
+              <Trans>By category</Trans>
+            </div>
             <Pie data={pieDataCategories} legend={{ position: 'bottom' }} />
           </div>
         ) : (
           <div className="flex justify-center items-end pt-8">
             <ChartPieIcon className="w-6 h-6" />
             <p className="italic text-gray-600 dark:text-gray-200">
-              You must enter expenses in at least two categories to display the
+              <Trans>
+                You must enter expenses in at least two categories to display
+                the
+              </Trans>
               <span className="text-black dark:text-gray-400">
-                {' '}
-                Categories chart
+                <Trans> Categories chart</Trans>
               </span>
               .
             </p>

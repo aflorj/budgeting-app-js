@@ -12,6 +12,7 @@ import {
   userAmountValueAtom,
   preferencesAtom,
 } from '../../utils/atoms';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function Expense({
   expenseObject,
@@ -19,6 +20,7 @@ export default function Expense({
   inputElement,
   helpers,
 }) {
+  const { t } = useTranslation();
   const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
@@ -216,14 +218,14 @@ export default function Expense({
                         autoComplete="off"
                         maxLength="64"
                         type="text"
-                        placeholder="New name for this expense"
+                        placeholder={t('New name for this expense')}
                         value={userInputValue}
                         ref={inputElement}
                         onChange={(e) => helpers.handleInputChange(e)}
                       />
                       {popoverError && (
                         <div className="text-sm text-red-500">
-                          {popoverError}
+                          <Trans>{popoverError}</Trans>
                         </div>
                       )}
                       <div className="pt-2 flex justify-between">
@@ -238,7 +240,7 @@ export default function Expense({
                           }
                           className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                         >
-                          Delete
+                          <Trans>Delete</Trans>
                         </button>
                         <div className="flex">
                           <button
@@ -246,13 +248,13 @@ export default function Expense({
                             onClick={() => helpers.resetPopover()}
                             className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                           >
-                            Cancel
+                            <Trans>Cancel</Trans>
                           </button>
                           <button
                             type="submit"
                             className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                           >
-                            OK
+                            <Trans>OK</Trans>
                           </button>
                         </div>
                       </div>

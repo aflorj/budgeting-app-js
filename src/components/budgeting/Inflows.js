@@ -11,12 +11,14 @@ import {
   userAmountValueAtom,
   preferencesAtom,
 } from '../../utils/atoms';
+import { Trans, useTranslation } from 'react-i18next';
 
 export default function Inflows({
   inputElement,
   helpers,
   docRefRecurringData,
 }) {
+  const { t } = useTranslation();
   const userInputValue = useRecoilValue(userInputValueAtom);
   const [budgetData, setBudgetData] = useRecoilState(budgetDataAtom);
   const [popoverError, setPopoverError] = useRecoilState(popoverErrorAtom);
@@ -190,7 +192,7 @@ export default function Inflows({
     <div id="all-inflows-wrapper" className="flex flex-col">
       <div className="flex items-center">
         <p className="text-xl font-bold underline dark:text-gray-200">
-          Inflows
+          <Trans>Inflows</Trans>
         </p>
         {/* add in inflow popover - start */}
         <Popover
@@ -212,7 +214,7 @@ export default function Inflows({
                     className="border-2 border-blue-400 focus:border-blue-300 rounded-sm py-1 px-2 focus:ring-10"
                     spellCheck="false"
                     autoComplete="off"
-                    placeholder="New Inflow"
+                    placeholder={t('New Inflow')}
                     maxLength="64"
                     type="text"
                     ref={inputElement}
@@ -220,7 +222,9 @@ export default function Inflows({
                     onChange={(e) => helpers.handleInputChange(e)}
                   />
                   {popoverError && (
-                    <div className="text-sm text-red-500">{popoverError}</div>
+                    <div className="text-sm text-red-500">
+                      <Trans>{popoverError}</Trans>
+                    </div>
                   )}
                   <div className="pt-2 flex justify-end">
                     <button
@@ -228,13 +232,13 @@ export default function Inflows({
                       onClick={() => helpers.resetPopover()}
                       className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                     >
-                      Cancel
+                      <Trans>Cancel</Trans>
                     </button>
                     <button
                       type="submit"
                       className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                     >
-                      OK
+                      <Trans>OK</Trans>
                     </button>
                   </div>
                 </form>
@@ -289,14 +293,14 @@ export default function Inflows({
                               autoComplete="off"
                               maxLength="64"
                               type="text"
-                              placeholder="New name for this category"
+                              placeholder={t('New name for this inflow')}
                               ref={inputElement}
                               value={userInputValue}
                               onChange={(e) => helpers.handleInputChange(e)}
                             />
                             {popoverError && (
                               <div className="text-sm text-red-500">
-                                {popoverError}
+                                <Trans>{popoverError}</Trans>
                               </div>
                             )}
                             <div className="pt-2 flex justify-between">
@@ -307,7 +311,7 @@ export default function Inflows({
                                 }
                                 className="text-red-500 hover:bg-red-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                               >
-                                Delete
+                                <Trans>Delete</Trans>
                               </button>
                               <div className="flex">
                                 <button
@@ -315,13 +319,13 @@ export default function Inflows({
                                   onClick={() => helpers.resetPopover()}
                                   className="text-blue-500 hover:bg-blue-500 hover:text-white px-1 rounded-md border-2 border-gray-300"
                                 >
-                                  Cancel
+                                  <Trans>Cancel</Trans>
                                 </button>
                                 <button
                                   type="submit"
                                   className="bg-blue-400 hover:bg-blue-500 text-white ml-2 px-4 rounded-md border-2 border-gray-300"
                                 >
-                                  OK
+                                  <Trans>OK</Trans>
                                 </button>
                               </div>
                             </div>
@@ -378,7 +382,9 @@ export default function Inflows({
             </div>
           ))
         ) : (
-          <div className="pl-2 italic text-gray-700">No inflows.</div>
+          <div className="pl-2 italic text-gray-700 dark:text-gray-200">
+            <Trans>No inflows.</Trans>
+          </div>
         )}
       </div>
     </div>
