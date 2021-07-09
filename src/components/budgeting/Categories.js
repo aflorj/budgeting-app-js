@@ -169,13 +169,17 @@ export default function Categories({
     e.preventDefault();
     const userInput = userInputValue.trim();
 
-    // array of all the expenses in the user's budget so we can compare for duplicates
-    const allExpenses = [];
-    budgetData.expenses.forEach((category) =>
-      category.expensesInCategory.forEach((expense) =>
-        allExpenses.push(expense.expense)
-      )
+    // the index of the category that we are adding an expense to
+    const indexOfCategory = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category
     );
+
+    // array of all the expenses in this category so we can compare for duplicates
+    const allExpenses = [];
+    budgetData.expenses[indexOfCategory].expensesInCategory.forEach((expense) =>
+      allExpenses.push(expense.expense)
+    );
+
     const expenseDuplicates = allExpenses.find(
       (expense) => expense.toLowerCase() === userInput.toLowerCase()
     );

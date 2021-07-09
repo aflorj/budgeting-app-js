@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import ErrorAlert from './ErrorAlert';
 import InfoAlert from './InfoAlert';
@@ -10,6 +10,9 @@ import Switch from 'react-switch';
 import { useTranslation } from 'react-i18next';
 import { AVAILABLE_LANGUAGES } from '../../constants';
 import { Trans } from 'react-i18next';
+import { db } from '../../firebase';
+import { isEmpty } from 'lodash';
+import InitialLoading from '../budgeting/InitialLoading';
 
 export default function UpdateProfile() {
   const emailRef = useRef();
@@ -21,9 +24,13 @@ export default function UpdateProfile() {
   const [loading, setLoading] = useRecoilState(loadingAtom);
   const history = useHistory();
   const [preferences, setPreferences] = useRecoilState(preferencesAtom);
-
   const { i18n } = useTranslation();
   const selectedLang = i18n.language;
+  const preferencesDoc = db
+    .collection('usersdb')
+    .doc(currentUser.uid)
+    .collection('recurringData')
+    .doc('preferences');
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -79,7 +86,25 @@ export default function UpdateProfile() {
     }));
   };
 
-  return (
+  // in case of page refresh at '/profile'
+  useEffect(() => {
+    isEmpty(preferences) &&
+      preferencesDoc
+        .get()
+        .then((doc) => {
+          setPreferences(doc.data());
+        })
+        .catch((error) => {
+          console.log(
+            'Error getting the preferences document on page refresh:',
+            error
+          );
+        });
+  }, []);
+
+  return isEmpty(preferences) ? (
+    <InitialLoading />
+  ) : (
     <div className={preferences.darkTheme && 'dark'}>
       <div className="flex flex-col h-screen bg-gray-200 dark:bg-gray-500">
         <Header user={currentUser} logout={handleLogout} back={true} />

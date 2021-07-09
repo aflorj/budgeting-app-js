@@ -33,13 +33,17 @@ export default function Expense({
     e.preventDefault();
     const userInput = userInputValue.trim();
 
-    // array of all expenses in the user's budget so we can compare for duplicates
-    const allExpenses = [];
-    budgetData.expenses.forEach((category) =>
-      category.expensesInCategory.forEach((expense) =>
-        allExpenses.push(expense.expense)
-      )
+    // the index of the category that the edited expense belongs to
+    const indexOfCategory = budgetData.expenses.findIndex(
+      (element) => element.categoryName === category
     );
+
+    // array of all the expenses in this category so we can compare for duplicates
+    const allExpenses = [];
+    budgetData.expenses[indexOfCategory].expensesInCategory.forEach((expense) =>
+      allExpenses.push(expense.expense)
+    );
+
     const expenseDuplicates = allExpenses.find(
       (expense) => expense.toLowerCase() === userInput.toLowerCase()
     );
@@ -59,11 +63,6 @@ export default function Expense({
           } else {
             // the new expense name is unique
             // change the expense name and close the popover
-
-            // the index of the category that the edited expense belongs to
-            const indexOfCategory = budgetData.expenses.findIndex(
-              (element) => element.categoryName === category
-            );
 
             // the index of the expense inside the category at that index
             const indexOfExpense = budgetData.expenses[

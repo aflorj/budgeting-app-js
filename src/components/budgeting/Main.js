@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { db } from '../../firebase';
 import { DEFAULT_CATEGORIES, DEFAULT_PREFERENCES } from '../../constants';
-import Loading from './Loading';
+import LoadingData from './LoadingData';
 import Charts from './Charts';
 import BudgetInfo from './BudgetInfo';
 import Inflows from './Inflows';
 import Categories from './Categories';
+import InitialLoading from './InitialLoading';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   displayedBudgetAtom,
@@ -17,6 +18,7 @@ import {
   popoverErrorAtom,
   preferencesAtom,
 } from '../../utils/atoms';
+import { isEmpty } from 'lodash';
 
 // TODO dealing with recurring data, adding saving/purchase goals
 
@@ -281,8 +283,10 @@ export default function Main({ user }) {
     setLoading(false);
   }, [budgetData]);
 
-  return loading ? (
-    <Loading />
+  return isEmpty(preferences) ? (
+    <InitialLoading />
+  ) : loading ? (
+    <LoadingData />
   ) : (
     <div className="bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
       <BudgetInfo />
