@@ -105,7 +105,7 @@ export default function UpdateProfile() {
   return isEmpty(preferences) ? (
     <InitialLoading />
   ) : (
-    <div className={preferences.darkTheme && 'dark'}>
+    <div className={`${preferences.darkTheme && 'dark'} font-body`}>
       <div className="flex flex-col h-screen bg-gray-200 dark:bg-gray-500">
         <Header user={currentUser} logout={handleLogout} back={true} />
         <div className="bg-gray-100 dark:bg-gray-300 p-4 flex flex-col mt-4 mx-auto rounded-lg shadow-lg w:7/8 md:w-1/2 lg:w-2/5 xl:1/3 space-y-8">

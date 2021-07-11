@@ -288,7 +288,7 @@ export default function Main({ user }) {
   ) : loading ? (
     <LoadingData />
   ) : (
-    <div className="bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
+    <div className="font-body bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
       <BudgetInfo />
       <div className="flex flex-col lg:flex-row dark:text-gray-100">
         <div className="overflow-y-auto m-2 flex-col space-y-2 w-full lg:w-1/2">

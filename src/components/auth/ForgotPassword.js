@@ -4,7 +4,6 @@ import ErrorAlert from './ErrorAlert';
 import InfoAlert from './InfoAlert';
 import { Link } from 'react-router-dom';
 import LandingPage from './LandingPage';
-import Legal from './Legal';
 import { Trans } from 'react-i18next';
 
 export default function ForgotPassword() {
@@ -78,7 +77,6 @@ export default function ForgotPassword() {
               </p>
             </div>
           </div>
-          <Legal />
         </div>
       }
     />

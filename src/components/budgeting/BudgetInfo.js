@@ -84,12 +84,11 @@ export default function BudgetInfo() {
   // TODO check for previous budgets from the user
   // TEMPORARY condition for displaying the 'previous month' arrow
   function conditionPrevious() {
-    if (displayedBudget.year > currentYear) {
+    if (
+      displayedBudget.year >= currentYear ||
+      displayedBudget.year === currentYear - 1
+    ) {
       return true;
-    } else if (displayedBudget.month >= currentMonth) {
-      return true;
-    } else {
-      return false;
     }
   }
 
@@ -105,7 +104,7 @@ export default function BudgetInfo() {
   }
 
   return (
-    <div className="bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
+    <div className="font-body bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
       <div className="ml-4 md:ml-8 lg:ml-20 flex items-center">
         {conditionPrevious() && (
           <ChevronLeftIcon

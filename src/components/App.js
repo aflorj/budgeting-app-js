@@ -9,7 +9,7 @@ import ForgotPassword from './auth/ForgotPassword';
 import UpdateProfile from './auth/UpdateProfile';
 import { RecoilRoot } from 'recoil';
 
-// TODO shepherdjs, i18n
+// TODO shepherdjs
 
 function App() {
   return (

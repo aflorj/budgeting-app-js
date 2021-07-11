@@ -6,11 +6,9 @@ import {
 } from '@heroicons/react/outline';
 import { Trans } from 'react-i18next';
 
-// TODO Loading animation or shallow copy
-
 export default function LoadingData() {
   return (
-    <div className="bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
+    <div className="font-body bg-gray-100 dark:bg-gray-700 p-2 flex flex-col mt-4 mb-8 mx-0 lg:mx-12 xl:mx-20 rounded-lg shadow-xl min-h-full">
       {/* budgetInfo */}
       <div className="bg-green-100 flex flex-row items-center rounded-lg shadow-lg m-2">
         <div className="ml-4 md:ml-8 lg:ml-20 flex items-center">
@@ -97,8 +95,7 @@ export default function LoadingData() {
               <div className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200 dark:border-green-300 mr-4 dark:bg-gray-600">
                 {/* editing a category popover - start */}
 
-                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1">
-                </div>
+                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1"></div>
 
                 {/* editing a category popover - end */}
                 {/* adding an expense popover - start */}
@@ -123,8 +120,9 @@ export default function LoadingData() {
                         <div className="cursor-pointer">
                           {/* editing an expense - start */}
 
-                          <div className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}>
-                          </div>
+                          <div
+                            className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}
+                          ></div>
 
                           {/* editing an expense - end */}
                         </div>
@@ -139,74 +137,6 @@ export default function LoadingData() {
                     {/* EXLIMIT */}
                   </div>
                 ))}
-
-                
-
-                {/* EXPENSES */}
-
-                <div className="flex justify-between border-t-2 pl-2 bg-green-100 dark:bg-green-300 rounded-lg dark:text-gray-900">
-                  <div className="flex justify-between w-4/5">
-                    <div className="flex justify-between w-7/12">
-                      <div className="pl-2"></div>
-                      <div className="w-1/3 text-sm"></div>
-                    </div>
-                    <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
-                  </div>
-                  {/* CLIMIT */}
-                  <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
-                  {/* CLIMIT */}
-                </div>
-              </div>
-            </div>
-          
-          <div id="all-expenses-in-category-and-category-wrapper">
-              <div className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200 dark:border-green-300 mr-4 dark:bg-gray-600">
-                {/* editing a category popover - start */}
-
-                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1">
-                </div>
-
-                {/* editing a category popover - end */}
-                {/* adding an expense popover - start */}
-
-                <div className="inline-block">
-                  <button className="focus:outline-white border-2 border-green-300 dark:border-gray-100 bg-gray-100 dark:bg-blue-300 hover:bg-green-300  dark:hover:bg-blue-400  rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-75 hover:opacity-100 transform transition hover:scale-125 dark:text-black">
-                    +
-                  </button>
-                </div>
-
-                {/* adding an expense popover - end */}
-
-                {/* EXPENSES */}
-                {['14', '16', '11', '24', '36', '28'].map((w) => (
-                  <div
-                    // border before hover is the same color as background
-                    className="border-b-2 border-gray-100 dark:border-gray-600 pl-2 flex justify-between"
-                  >
-                    {/* ta objame expense in prvi input */}
-                    <div className="flex justify-between w-4/5">
-                      <div className="flex justify-between w-7/12">
-                        <div className="cursor-pointer">
-                          {/* editing an expense - start */}
-
-                          <div className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}>
-                          </div>
-
-                          {/* editing an expense - end */}
-                        </div>
-                        <div className="w-1/3 text-sm"></div>
-                      </div>
-                      <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
-                      {/* do tu objamemo prvi input */}
-                    </div>
-                    {/* do tu objamemo prvi input */}
-                    {/* EXLIMIT */}
-                    <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
-                    {/* EXLIMIT */}
-                  </div>
-                ))}
-
-                
 
                 {/* EXPENSES */}
 
@@ -229,8 +159,71 @@ export default function LoadingData() {
               <div className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200 dark:border-green-300 mr-4 dark:bg-gray-600">
                 {/* editing a category popover - start */}
 
-                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1">
+                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1"></div>
+
+                {/* editing a category popover - end */}
+                {/* adding an expense popover - start */}
+
+                <div className="inline-block">
+                  <button className="focus:outline-white border-2 border-green-300 dark:border-gray-100 bg-gray-100 dark:bg-blue-300 hover:bg-green-300  dark:hover:bg-blue-400  rounded-full h-5 w-5 flex items-center justify-center cursor-pointer ml-1 opacity-75 hover:opacity-100 transform transition hover:scale-125 dark:text-black">
+                    +
+                  </button>
                 </div>
+
+                {/* adding an expense popover - end */}
+
+                {/* EXPENSES */}
+                {['14', '16', '11', '24', '36', '28'].map((w) => (
+                  <div
+                    // border before hover is the same color as background
+                    className="border-b-2 border-gray-100 dark:border-gray-600 pl-2 flex justify-between"
+                  >
+                    {/* ta objame expense in prvi input */}
+                    <div className="flex justify-between w-4/5">
+                      <div className="flex justify-between w-7/12">
+                        <div className="cursor-pointer">
+                          {/* editing an expense - start */}
+
+                          <div
+                            className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}
+                          ></div>
+
+                          {/* editing an expense - end */}
+                        </div>
+                        <div className="w-1/3 text-sm"></div>
+                      </div>
+                      <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
+                      {/* do tu objamemo prvi input */}
+                    </div>
+                    {/* do tu objamemo prvi input */}
+                    {/* EXLIMIT */}
+                    <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
+                    {/* EXLIMIT */}
+                  </div>
+                ))}
+
+                {/* EXPENSES */}
+
+                <div className="flex justify-between border-t-2 pl-2 bg-green-100 dark:bg-green-300 rounded-lg dark:text-gray-900">
+                  <div className="flex justify-between w-4/5">
+                    <div className="flex justify-between w-7/12">
+                      <div className="pl-2"></div>
+                      <div className="w-1/3 text-sm"></div>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
+                  </div>
+                  {/* CLIMIT */}
+                  <div className="bg-gradient-to-r from-green-300 to-transparent rounded-l h-6 w-16"></div>
+                  {/* CLIMIT */}
+                </div>
+              </div>
+            </div>
+
+            <div id="all-expenses-in-category-and-category-wrapper">
+              <div className="p-2 rounded-lg shadow-lg my-2 border-l-8 border-green-200 dark:border-green-300 mr-4 dark:bg-gray-600">
+                {/* editing a category popover - start */}
+
+                <div className="h-6 w-24 bg-gradient-to-r from-green-300 to-transparent rounded-l inline-block rounded-md px-1"></div>
 
                 {/* editing a category popover - end */}
                 {/* adding an expense popover - start */}
@@ -255,8 +248,9 @@ export default function LoadingData() {
                         <div className="cursor-pointer">
                           {/* editing an expense - start */}
 
-                          <div className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}>
-                          </div>
+                          <div
+                            className={`pl-2 flex h-6 w-${w} bg-gradient-to-r from-green-300 to-transparent rounded-l`}
+                          ></div>
 
                           {/* editing an expense - end */}
                         </div>
@@ -271,8 +265,6 @@ export default function LoadingData() {
                     {/* EXLIMIT */}
                   </div>
                 ))}
-
-                
 
                 {/* EXPENSES */}
 
@@ -290,10 +282,7 @@ export default function LoadingData() {
                 </div>
               </div>
             </div>
-          
-          
           </div>
-
 
           {/* CATEGORIES */}
         </div>

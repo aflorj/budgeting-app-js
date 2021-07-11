@@ -3,7 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import ErrorAlert from './ErrorAlert';
 import { Link, useHistory } from 'react-router-dom';
 import LandingPage from './LandingPage';
-import Legal from './Legal';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Signup() {
@@ -103,7 +102,6 @@ export default function Signup() {
               </Link>
             </p>
           </div>
-          <Legal />
         </div>
       }
     />

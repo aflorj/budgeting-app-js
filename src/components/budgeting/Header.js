@@ -17,7 +17,7 @@ export default function Header({ user, logout, back }) {
   const preferences = useRecoilValue(preferencesAtom);
   return (
     !isEmpty(preferences) && (
-      <div className="px-4 py-2 flex justify-between bg-green-200 m-2 rounded-lg shadow-lg">
+      <div className="font-body px-4 py-2 flex justify-between bg-green-200 m-2 rounded-lg shadow-lg">
         <div className="flex space-x-2 items-center">
           {back ? (
             <>
