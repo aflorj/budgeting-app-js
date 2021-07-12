@@ -9,8 +9,6 @@ import ForgotPassword from './auth/ForgotPassword';
 import UpdateProfile from './auth/UpdateProfile';
 import { RecoilRoot } from 'recoil';
 
-// TODO shepherdjs
-
 function App() {
   return (
     <RecoilRoot>

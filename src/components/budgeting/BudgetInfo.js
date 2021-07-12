@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronRightIcon, ChevronLeftIcon } from '@heroicons/react/outline';
-import { MONTHS } from '../../constants';
+import { MONTHS } from '../../utils/constants';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   displayedBudgetAtom,

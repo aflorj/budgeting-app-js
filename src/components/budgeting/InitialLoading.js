@@ -1,4 +1,6 @@
 import React from 'react';
+import { Trans } from 'react-i18next';
+import logo from '../../assets/logo.svg';
 
 export default function InitialLoading() {
   return (
@@ -14,8 +16,13 @@ export default function InitialLoading() {
         ></path>
       </svg>
       <div>
-        <div className="flex animate-bounce text-xl text-green-800 w-screen mx-auto justify-center pt-72">
-          Loading your budget...
+        <div className="flex flex-col text-xl text-green-800 w-screen mx-auto justify-center pt-72">
+          <div className="pb-8 animate-bounce">
+            <img src={logo} alt="logo" className="flex w-12 h-12 mx-auto" />
+          </div>
+          <div className="mx-auto">
+            <Trans>Loading your budget...</Trans>
+          </div>
         </div>
       </div>
     </div>

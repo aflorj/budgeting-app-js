@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pie } from 'react-chartjs-2';
 import { ChartPieIcon } from '@heroicons/react/outline';
 import { Trans } from 'react-i18next';
-
-// TODO pie chart colors
+import { PIE_CHART_COLORS } from '../../utils/constants';
 
 export default function Charts({ expenses }) {
   // chart 1: 'by expense'
@@ -35,8 +34,7 @@ export default function Charts({ expenses }) {
       datasets: [
         {
           data: amountsToDisplay,
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-          hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+          backgroundColor: PIE_CHART_COLORS,
         },
       ],
     });
@@ -71,8 +69,7 @@ export default function Charts({ expenses }) {
       datasets: [
         {
           data: categoryAmountsToDisplay,
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-          hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+          backgroundColor: PIE_CHART_COLORS,
         },
       ],
     });

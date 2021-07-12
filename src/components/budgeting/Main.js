@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { db } from '../../firebase';
-import { DEFAULT_CATEGORIES, DEFAULT_PREFERENCES } from '../../constants';
+import { DEFAULT_CATEGORIES, DEFAULT_PREFERENCES } from '../../utils/constants';
 import LoadingData from './LoadingData';
 import Charts from './Charts';
 import BudgetInfo from './BudgetInfo';

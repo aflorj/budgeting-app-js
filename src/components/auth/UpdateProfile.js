@@ -8,7 +8,7 @@ import { useRecoilState } from 'recoil';
 import { preferencesAtom, loadingAtom } from '../../utils/atoms';
 import Switch from 'react-switch';
 import { useTranslation } from 'react-i18next';
-import { AVAILABLE_LANGUAGES } from '../../constants';
+import { AVAILABLE_LANGUAGES } from '../../utils/constants';
 import { Trans } from 'react-i18next';
 import { db } from '../../firebase';
 import { isEmpty } from 'lodash';

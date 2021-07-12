@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-//import logo from '../../assets/logo.svg';
+import logo from '../../assets/logo.svg';
 import tablet from '../../assets/tablet.png';
 import phone from '../../assets/phone.png';
 import { Trans } from 'react-i18next';
@@ -9,7 +9,7 @@ import Legal from './Legal';
 
 export default function LandingPage({ content }) {
   return (
-    <div className="font-body bg-gray-100 h-screen w-full flex flex-col md:flex-row relative">
+    <div className="font-body bg-gray-300 h-screen w-full flex flex-col md:flex-row relative">
       <svg
         className="absolute bottom-0"
         xmlns="http://www.w3.org/2000/svg"
@@ -25,9 +25,7 @@ export default function LandingPage({ content }) {
         <LanguageSelect />
         <div className="flex items-center justify-center space-x-8">
           <div className="relative w-1/2">
-            <div className="animate-highlight blur-xl absolute mix-blend-multiply opacity-80 filter  -top-2 right-16 w-5/6 h-5/6 bg-green-200 rounded-full"></div>
-            <div className="animate-highlight blur-xl animation-delay-2000 absolute mix-blend-multiply opacity-80 filter  -top-4 right-20 w-5/6 h-5/6 bg-green-300 rounded-full"></div>
-            <div className="animate-highlight blur-xl animation-delay-4000 absolute mix-blend-multiply opacity-80 filter  -top-2 right-24 w-5/6 h-5/6 bg-green-100 rounded-full"></div>
+            <div className="animate-highlight blur-xl absolute opacity-70 filter -top-8 right-2 w-full h-full bg-green-300 rounded-full"></div>
             <img
               className="w-full filter drop-shadow-2xl"
               alt="tablet"
@@ -59,6 +57,10 @@ export default function LandingPage({ content }) {
         </div>
       </div>
       <div className="z-10 bg-gray-100 md:w-1/3 flex flex-col shadow-2xl lg:mr-12 justify-center px-8">
+        <div className="pb-8 hidden md:block">
+          <img src={logo} alt="logo" className="flex w-16 h-16 mx-auto" />
+        </div>
+
         {content}
       </div>
       <div className="block md:hidden w-full relative">

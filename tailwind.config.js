@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     extend: {
       animation: {
-        highlight: 'highlight 7s infinite',
+        highlight: 'highlight 4s infinite',
       },
       keyframes: {
         highlight: {
@@ -12,10 +12,10 @@ module.exports = {
             transform: 'translate(0px, 0px) scale(1)',
           },
           '33%': {
-            transform: 'translate(30px, -50px) scale(1.1)',
+            transform: 'translate(20px, -30px) scale(1.08)',
           },
           '66%': {
-            transform: 'translate(-20px, 20px) scale(0.9)',
+            transform: 'translate(-15px, 15px) scale(0.95)',
           },
           '100%': {
             transform: 'translate(0px, 0px) scale(1)',

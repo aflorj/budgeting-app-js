@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AVAILABLE_LANGUAGES } from '../constants';
+import { AVAILABLE_LANGUAGES } from '../utils/constants';
 
 export default function LanguageSelect() {
   const { i18n } = useTranslation();

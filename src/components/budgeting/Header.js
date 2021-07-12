@@ -4,15 +4,14 @@ import {
   LogoutIcon,
   AdjustmentsIcon,
   UserIcon,
-  CalculatorIcon,
   ArrowCircleLeftIcon,
 } from '@heroicons/react/outline';
 import { Trans } from 'react-i18next';
 import { useRecoilValue } from 'recoil';
 import { preferencesAtom } from '../../utils/atoms';
 import { isEmpty } from 'lodash';
+import logo from '../../assets/logo.svg';
 
-// TODO replace the calculator with the actual logo
 export default function Header({ user, logout, back }) {
   const preferences = useRecoilValue(preferencesAtom);
   return (
@@ -32,7 +31,7 @@ export default function Header({ user, logout, back }) {
             </>
           ) : (
             <>
-              <CalculatorIcon className="h-8 w-8" />
+              <img src={logo} alt="logo" className="w-8 h-8 filter" />
               <p className="font-bold">Budgetko</p>
             </>
           )}
@@ -44,7 +43,11 @@ export default function Header({ user, logout, back }) {
           </div>
           {back ? (
             <Link to="/">
-              <CalculatorIcon className="h-8 w-8 opacity-70 hover:opacity-100 cursor-pointer" />
+              <img
+                src={logo}
+                alt="logo"
+                className="w-8 h-8 filter grayscale opacity-70 hover:opacity-100 cursor-pointer"
+              />
             </Link>
           ) : (
             <Link to="/profile">
