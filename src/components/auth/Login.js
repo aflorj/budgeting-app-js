@@ -32,7 +32,7 @@ export default function Login() {
     <LandingPage
       content={
         <>
-          <div className="">
+          <div>
             <p className="text-center text-3xl hidden md:block">
               <Trans>Log in to your account</Trans>
             </p>

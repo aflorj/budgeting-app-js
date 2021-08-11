@@ -1,13 +1,26 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import logo from '../../assets/logo.svg';
 import tablet from '../../assets/tablet.png';
 import phone from '../../assets/phone.png';
 import { Trans } from 'react-i18next';
 import LanguageSelect from '../LanguageSelect';
 import Legal from './Legal';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function LandingPage({ content }) {
+  const history = useHistory();
+  const { login } = useAuth();
+
+  async function bypassLogin() {
+    try {
+      await login('test@test.com', 'testtest');
+      history.push('/');
+    } catch {
+      console.log('Bypassing login failed');
+    }
+  }
+
   return (
     <div className="font-body bg-gray-300 h-screen w-full flex flex-col md:flex-row relative">
       <svg
@@ -47,11 +60,12 @@ export default function LandingPage({ content }) {
               </p>
             </div>
             <div className="flex justify-center">
-              <Link to="/signup">
-                <button className="text-3xl bg-red-500 hover:bg-red-400 rounded-lg p-2 text-white">
-                  <Trans>Sign up for a free trial</Trans>
-                </button>
-              </Link>
+              <button
+                className="text-3xl bg-red-500 hover:bg-red-400 rounded-lg p-2 text-white"
+                onClick={() => bypassLogin()}
+              >
+                <Trans>Click here to try it out!</Trans>
+              </button>
             </div>
           </div>
         </div>
@@ -60,7 +74,6 @@ export default function LandingPage({ content }) {
         <div className="pb-8 hidden md:block">
           <img src={logo} alt="logo" className="flex w-16 h-16 mx-auto" />
         </div>
-
         {content}
       </div>
       <div className="block md:hidden w-full relative">
